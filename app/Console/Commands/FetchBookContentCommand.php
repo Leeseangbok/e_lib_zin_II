@@ -9,19 +9,43 @@ use Illuminate\Support\Facades\Log;
 
 class FetchBookContentCommand extends Command
 {
-    protected $signature = 'book:fetch-content {--limit=50 : The number of books to fetch content for.}';
-    protected $description = 'Fetches and stores the EPUB file for books that are missing it';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    // --- MODIFICATION: Added --force option ---
+    protected $signature = 'book:fetch-content {--limit=50 : The number of books to fetch content for.} {--force : Whether to re-download content even if it exists.}';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Fetches and stores the full text for books that are missing it, with an option to force re-download';
+
+    /**
+     * Execute the console command.
+     */
     public function handle(): int
     {
         $limit = (int) $this->option('limit');
+        $force = $this->option('force');
         $this->info("Attempting to fetch content for up to {$limit} books...");
+        if ($force) {
+            $this->warn('The --force flag is enabled. Existing content will be overwritten.');
+        }
 
-        // **MODIFIED**: Find books that have an epub_url but no content yet.
-        $booksToFetch = Book::whereNull('text_content')
-                              ->whereNotNull('epub_url')
-                              ->take($limit)
-                              ->get();
+        // --- MODIFICATION: Query changes based on --force flag ---
+        $query = Book::query()->whereNotNull('text_url');
+
+        if (!$force) {
+            // If not forcing, only get books with no content.
+            $query->whereNull('text_content');
+        }
+
+        $booksToFetch = $query->take($limit)->get();
+        // --- END MODIFICATION ---
 
         if ($booksToFetch->isEmpty()) {
             $this->info('No books found that need their content fetched. All set!');
@@ -30,16 +54,19 @@ class FetchBookContentCommand extends Command
 
         $progressBar = $this->output->createProgressBar($booksToFetch->count());
         $progressBar->start();
+
         $fetchedCount = 0;
         $failedCount = 0;
 
         foreach ($booksToFetch as $book) {
             try {
-                // **MODIFIED**: Fetch from the epub_url.
-                $response = Http::get($book->epub_url);
+                // --- MODIFICATION: Added timeout and retry logic for robustness ---
+                $response = Http::timeout(30)      // Wait a maximum of 30 seconds for a response
+                                  ->retry(3, 200)  // Retry 3 times with a 200ms delay between attempts
+                                  ->get($book->text_url);
+                // --- END MODIFICATION ---
 
                 if ($response->successful()) {
-                    // **MODIFIED**: Save the raw binary content of the EPUB file.
                     $book->text_content = $response->body();
                     $book->save();
                     $fetchedCount++;

@@ -27,7 +27,7 @@ class FetchBooksCommand extends Command
         $categories = Category::all();
         if ($categories->isEmpty()) {
             $this->error('No categories found. Please seed the categories table first by running: php artisan db:seed --class=CategorySeeder');
-            return Command::FAILURE;
+            return 1;
         }
 
         $totalBooksAdded = 0;
@@ -35,6 +35,7 @@ class FetchBooksCommand extends Command
         $endPage = $startPage + $pagesToFetch - 1;
 
         $this->info("Starting from page {$startPage} up to page {$endPage}.");
+
         $progressBar = $this->output->createProgressBar($pagesToFetch);
         $progressBar->start();
 
@@ -47,9 +48,12 @@ class FetchBooksCommand extends Command
             }
 
             foreach ($bookData['results'] as $bookItem) {
+                // --- MODIFICATION START ---
+                // Prioritize EPUB format, but also get plain text as a fallback.
                 $epubUrl = $bookItem['formats']['application/epub+zip'] ?? null;
                 $plainTextUrl = $bookItem['formats']['text/plain; charset=us-ascii'] ?? $bookItem['formats']['text/plain'] ?? null;
 
+                // Skip if no usable format is found.
                 if (!$epubUrl && !$plainTextUrl) {
                     continue;
                 }
@@ -61,24 +65,23 @@ class FetchBooksCommand extends Command
                         'author' => $bookItem['authors'][0]['name'] ?? 'Unknown',
                         'description' => "A classic work by " . ($bookItem['authors'][0]['name'] ?? 'Unknown') . ".",
                         'cover_image_url' => $bookItem['formats']['image/jpeg'] ?? null,
-                        'epub_url' => $epubUrl,
-                        'text_url' => $plainTextUrl,
+                        'epub_url' => $epubUrl, // Save the new EPUB URL
+                        'text_url' => $plainTextUrl, // Save the plain text URL as a fallback
                         'category_id' => $categories->random()->id
                     ]
                 );
+                // --- MODIFICATION END ---
 
                 if ($created->wasRecentlyCreated) {
                     $totalBooksAdded++;
                 }
             }
-
             $progressBar->advance();
         }
 
         $progressBar->finish();
         $this->info("\nCommand finished. Added {$totalBooksAdded} new books to the database.");
-
-        return Command::SUCCESS;
+        return 0;
     }
 
     private function getHighestPageFetched(): int
