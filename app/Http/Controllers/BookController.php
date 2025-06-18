@@ -58,18 +58,21 @@ class BookController extends Controller
         return view('books.show', compact('book', 'relatedBooks'));
     }
 
-/**
-     * Display the book reading interface from locally stored content.
-     */
     public function read(Book $book)
     {
+        if ($book->epub_url) {
+            return view('books.read_epub', [
+                'book' => $book,
+                'epubUrl' => $book->epub_url,
+            ]);
+        }
+
         $chapters = [];
         $bookContent = $book->text_content;
 
         if (empty($bookContent)) {
             $chapters[] = ['title' => 'Error', 'content' => '<p>The text for this book has not been downloaded yet. Please ask the site administrator to fetch the content.</p>'];
         } else {
-            // Chapter parsing logic remains the same, but now it's 100% reliable
             $bookContent = $this->extractBookContent($bookContent);
             $chapterRegex = '/^\s*(chapter|prologue|epilogue|part)\s*([IVXLCDM\d]+|[a-zA-Z\s]+)\.?\s*$/im';
             $lines = explode("\n", $bookContent);
@@ -103,7 +106,6 @@ class BookController extends Controller
             'chapters' => $chapters,
         ]);
     }
-
     /**
      * Extracts the core text of a book, removing Gutenberg headers/footers.
      */
@@ -140,9 +142,9 @@ class BookController extends Controller
         $paragraphs = preg_split('/(\r\n|\n|\r){2,}/', $content);
 
         return collect($paragraphs)
-            ->map(fn ($p) => trim($p))
+            ->map(fn($p) => trim($p))
             ->filter()
-            ->map(fn ($p) => '<p class="mb-6">' . htmlspecialchars($p, ENT_QUOTES, 'UTF-8') . '</p>')
+            ->map(fn($p) => '<p class="mb-6">' . htmlspecialchars($p, ENT_QUOTES, 'UTF-8') . '</p>')
             ->implode('');
     }
 }

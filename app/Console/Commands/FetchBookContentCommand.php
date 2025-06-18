@@ -9,31 +9,17 @@ use Illuminate\Support\Facades\Log;
 
 class FetchBookContentCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'book:fetch-content {--limit=50 : The number of books to fetch content for.}';
+    protected $description = 'Fetches and stores the EPUB file for books that are missing it';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Fetches and stores the full text for books that are missing it';
-
-    /**
-     * Execute the console command.
-     */
     public function handle(): int
     {
         $limit = (int) $this->option('limit');
         $this->info("Attempting to fetch content for up to {$limit} books...");
 
-        // Find books where text_content is NULL and text_url is not NULL
+        // **MODIFIED**: Find books that have an epub_url but no content yet.
         $booksToFetch = Book::whereNull('text_content')
-                              ->whereNotNull('text_url')
+                              ->whereNotNull('epub_url')
                               ->take($limit)
                               ->get();
 
@@ -44,15 +30,16 @@ class FetchBookContentCommand extends Command
 
         $progressBar = $this->output->createProgressBar($booksToFetch->count());
         $progressBar->start();
-
         $fetchedCount = 0;
         $failedCount = 0;
 
         foreach ($booksToFetch as $book) {
             try {
-                $response = Http::get($book->text_url);
+                // **MODIFIED**: Fetch from the epub_url.
+                $response = Http::get($book->epub_url);
 
                 if ($response->successful()) {
+                    // **MODIFIED**: Save the raw binary content of the EPUB file.
                     $book->text_content = $response->body();
                     $book->save();
                     $fetchedCount++;
