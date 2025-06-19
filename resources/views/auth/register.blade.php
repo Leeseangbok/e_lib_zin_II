@@ -1,20 +1,7 @@
 <x-guest-layout>
     <div class="flex h-screen bg-gray-900">
-        <div class="hidden lg:flex w-1/2 bg-purple-900 text-white p-12 flex-col justify-between relative">
-            <div class="absolute top-10 left-10">
-                 <h1 class="text-4xl font-bold mb-4">Welcome to E-Lib</h1>
-                 <p class="text-lg">Your digital library awaits.</p>
-            </div>
-            <div class="my-auto">
-                 <img src="/background.png" alt="Bookshelf and reading glasses" class="max-w-md mx-auto">
-            </div>
-            <div class="text-sm">
-                 <p><strong>Email Support:</strong> support@elib.com</p>
-                 <p><strong>Phone Support:</strong> +1 (234) 567-890</p>
-            </div>
-        </div>
 
-        <div class="w-full lg:w-1/2 bg-gray-900 p-8 sm:p-12 flex items-center justify-center">
+        <div class="w-full bg-gray-900 p-8 sm:p-12 flex items-center justify-center">
             <div class="w-full flex flex-col justify-center">
                 <h2 class="text-4xl font-bold text-white mb-2">Create Your Account</h2>
                 <p class="text-gray-200 mb-8">Let's get you started with your free account.</p>

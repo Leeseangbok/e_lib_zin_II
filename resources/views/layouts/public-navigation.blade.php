@@ -4,7 +4,8 @@
             <!-- Logo and Navigation -->
             <div class="flex items-center space-x-8">
                 <a href="{{ route('welcome') }}" class="flex items-center space-x-2">
-                    <x-application-logo class="block h-9 w-auto fill-current text-white" />
+                    <img src="{{ asset('e_lib_logo.png') }}" alt="E-Lib Logo"
+                        class="h-10 w-10 rounded-full">
                     <span class="font-bold text-3xl text-white joti hidden sm:inline">E-Lib</span>
                 </a>
                 <div class="hidden md:flex space-x-6 winky">
