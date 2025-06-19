@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Models\FavoriteBook;
-use App\Models\Review; // <-- Import the Review model
+use App\Models\Review;
+use Illuminate\Support\Facades\Log; // Import Log facade
 
 class BookController extends Controller
 {
@@ -23,9 +24,9 @@ class BookController extends Controller
     {
         $page = $request->input('page', 1);
         $search = $request->input('search');
-        $topic = $request->input('topic'); // Get topic from request
+        $topic = $request->input('topic');
 
-        $bookData = $this->gutendexService->getBooks($page, $search, $topic); // Pass topic to service
+        $bookData = $this->gutendexService->getBooks($page, $search, $topic);
 
         return view('books.index', [
             'books' => $bookData,
@@ -33,43 +34,33 @@ class BookController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified book with its reviews and favorite status.
-     */
-   public function show($id)
+    public function show($id)
     {
-        // 1. Fetch book data from the API
         $book = $this->gutendexService->getBookById($id);
 
         if (!$book) {
             abort(404, 'Book not found.');
         }
 
-        // 2. Check favorite status directly against the pivot table
         $isFavorite = false;
         if (Auth::check()) {
-            // This is the corrected logic: Query the pivot table directly.
             $isFavorite = FavoriteBook::where('user_id', Auth::id())
-                                      ->where('gutenberg_book_id', $id)
-                                      ->exists();
+                ->where('gutenberg_book_id', $id)
+                ->exists();
         }
 
-        // 3. Fetch reviews for this book from your database
         $reviews = Review::where('gutenberg_book_id', $id)
-                         ->with('user') // Eager load user data
-                         ->latest()     // Show newest first
-                         ->get();
+            ->with('user')
+            ->latest()
+            ->get();
 
-        // 4. Fetch related books (no changes here)
         $authorName = $book['authors'][0]['name'] ?? null;
         $relatedBooksData = $authorName ? $this->gutendexService->getBooks(1, $authorName) : ['results' => []];
         $relatedBooks = array_filter($relatedBooksData['results'], fn($related) => $related['id'] != $id);
         $relatedBooks = array_slice($relatedBooks, 0, 5);
 
-        // 5. Pass all data to the view
         return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews'));
     }
-
 
     public function toggleFavorite(Request $request)
     {
@@ -93,30 +84,54 @@ class BookController extends Controller
             return back()->with('success', 'Book added to your library.');
         }
     }
+// In app/Http/Controllers/BookController.php
 
-    public function read($id)
-    {
-        $book = $this->gutendexService->getBookById($id);
-        $textContentUrl = $book['formats']['text/plain; charset=us-ascii'] ?? $book['formats']['text/plain'] ?? null;
+public function read($id)
+{
+    $book = $this->gutendexService->getBookById($id);
 
-        if (!$textContentUrl) {
-            abort(404, 'No readable text version found for this book.');
-        }
+    // Get the text URL directly from the 'text_url' key provided by your service.
+    $textContentUrl = $book['text_url'] ?? null;
 
-        $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl) {
-            return Http::get($textContentUrl)->body();
-        });
-
-        $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
-
-        return view('books.read', [
-            'book' => $book,
-            'chapters' => $chapters,
-        ]);
+    if (!$textContentUrl) {
+        // If the text_url is missing for any reason, log it and show an error.
+        Log::error("No 'text_url' found for book ID: {$id}", ['book_data' => $book]);
+        abort(404, 'No readable text version found for this book.');
     }
 
+    try {
+        // Use the text_url to fetch the content.
+        $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl, $id) {
+            $response = Http::get($textContentUrl);
 
-    // --- Private Helper Methods ---
+            if ($response->failed()) {
+                Log::error("Failed to fetch book content for ID: {$id} from URL: {$textContentUrl}", ['status' => $response->status()]);
+                return null;
+            }
+
+            return $response->body();
+        });
+
+        if ($rawText === null) {
+            abort(500, 'Could not retrieve book content from the source.');
+        }
+
+    } catch (\Exception $e) {
+        Log::error("Exception while fetching book content for ID: {$id}", ['message' => $e->getMessage()]);
+        abort(500, 'An error occurred while trying to fetch the book content.');
+    }
+
+    // The rest of the logic to split into chapters remains the same.
+    $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
+
+    return view('books.read', [
+        'book' => $book,
+        'chapters' => $chapters,
+    ]);
+}
+
+
+    // --- Private Helper Methods (unchanged from previous version) ---
 
     private function extractBookContent(string $rawText): string
     {
@@ -127,7 +142,6 @@ class BookController extends Controller
         if ($startIndex !== false) {
             $startIndex = strpos($rawText, "\n", $startIndex) ?: $startIndex;
         } else {
-            // A more robust fallback for books missing the START marker
             $altStartMarker = '*** START OF THIS PROJECT GUTENBERG EBOOK';
             $startIndex = strpos($rawText, $altStartMarker);
             if ($startIndex !== false) {
@@ -152,17 +166,18 @@ class BookController extends Controller
     private function splitIntoChapters(string $bookContent): array
     {
         $chapters = [];
-        $chapterRegex = '/^\s*(chapter|prologue|epilogue|part|section|book)\s*([IVXLCDM\d]+|[a-zA-Z\s]+)\.?\s*$/im';
+        $chapterRegex = '/^\s*(chapter|prologue|epilogue|part|section|book|letter)\s*([IVXLCDM\d\s\.-]+|[a-zA-Z\d\s\.-]+)\.?\s*$/imU';
+
         $lines = explode("\n", $bookContent);
         $currentChapterTitle = 'Introduction';
         $currentChapterLines = [];
 
         foreach ($lines as $line) {
-            if (preg_match($chapterRegex, trim($line))) {
+            if (preg_match($chapterRegex, trim($line), $matches)) {
                 if (!empty(trim(implode("\n", $currentChapterLines)))) {
                     $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
                 }
-                $currentChapterTitle = Str::title(trim($line));
+                $currentChapterTitle = Str::title(trim($matches[0]));
                 $currentChapterLines = [];
             } else {
                 $currentChapterLines[] = $line;
@@ -183,12 +198,12 @@ class BookController extends Controller
     private function formatChapterContent(array $lines): string
     {
         $content = trim(implode("\n", $lines));
-        $paragraphs = explode("\n\n", $content);
+        $paragraphs = preg_split('/(\r\n|\n){2,}/', $content);
         $html = '';
         foreach ($paragraphs as $p) {
             $trimmedP = trim($p);
             if (!empty($trimmedP)) {
-                $html .= '<p>' . nl2br(e($trimmedP)) . '</p>';
+                $html .= '<p class="mb-4">' . nl2br(e($trimmedP)) . '</p>';
             }
         }
         return $html;

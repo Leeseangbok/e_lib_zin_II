@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-semibold text-xl text-white leading-tight">
             {{ __("Dashboard for") }} {{ $user->name }}
         </h2>
     </x-slot>
@@ -14,7 +14,7 @@
             </div>
 
             <div class="mt-8">
-                <h3 class="text-2xl font-semibold text-gray-800">Your Library</h3>
+                <h3 class="text-2xl font-semibold text-white">Your Library</h3>
                 @if($favoriteBooks->isNotEmpty())
                     <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         @foreach ($favoriteBooks as $book)

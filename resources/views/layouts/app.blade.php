@@ -19,7 +19,7 @@
     @stack('styles')
 </head>
 
-<body class="font-sans antialiased">
+<body class="font-sans antialiased winky">
     <div class="min-h-screen flex flex-col">
         @include('layouts.public-navigation')
 
