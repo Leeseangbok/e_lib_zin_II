@@ -10,14 +10,13 @@
             <div class="bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     @if ($favoriteBooks->isNotEmpty())
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                             @foreach ($favoriteBooks as $book)
-                                {{-- We can reuse the book card component from the home page! --}}
                                 <div
-                                    class="flex flex-col bg-gray-900 border p-2 border-gray-200 rounded-lg overflow-hidden">
-                                    <a href="{{ route('books.show', $book) }}" class="group">
+                                    class="flex flex-col bg-gray-900 border p-2 border-gray-200 rounded-lg overflow-hidden h-full">
+                                    <a href="{{ route('books.show', $book) }}" class="group flex flex-col h-full">
 
-                                        <img class="h-64 w-full object-cover rounded-t-sm transition-transform duration-300 group-hover:scale-105"
+                                        <img class="h-48 sm:h-56 md:h-64 w-full object-cover rounded-t-sm transition-transform duration-300 group-hover:scale-105"
                                             src="{{ $book->cover_image_url ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
                                             alt="Cover of {{ $book->title }}">
 

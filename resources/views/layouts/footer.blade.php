@@ -1,34 +1,37 @@
 <footer class="w-full bg-gray-800 text-gray-100 mt-10">
-    <div class="container mx-auto px-4 py-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="container mx-auto px-2 py-6 sm:px-4 sm:py-10 grid gap-6 sm:gap-10
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-4">
         <!-- Brand Section -->
-        <div class="space-y-4">
-            <div class="flex items-center space-x-2">
-                <img src="/e_lib_logo.png" alt="" class="w-15 rounded-full h-15" />
-                <span class="text-4xl font-semibold joti">E-Lib</span>
+        <div class="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left text-sm break-words">
+            <div class="flex items-center space-x-2 justify-center sm:justify-start">
+                <img src="/e_lib_logo.png" alt="" class="w-12 h-12 sm:w-15 sm:h-15 rounded-full" />
+                <span class="text-2xl sm:text-4xl font-semibold joti">E-Lib</span>
             </div>
-            <p class="text-sm text-gray-400">
+            <p class="text-xs sm:text-sm text-gray-400">
                 E-Lib is a digital library platform that provides access to a vast collection of books, articles, and other educational resources. Our mission is to make knowledge accessible to everyone, anywhere, anytime.
             </p>
-            <div class="flex space-x-3">
+            <div class="flex space-x-2 sm:space-x-3 justify-center sm:justify-start">
                 <a href="#" class="rounded-full p-2 bg-gray-800 hover:bg-gray-700 transition" aria-label="Twitter">
-                    <svg class="h-8 w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.4.36a9.09 9.09 0 01-2.88 1.1A4.52 4.52 0 0016.11 0c-2.5 0-4.52 2.02-4.52 4.52 0 .36.04.71.11 1.05C7.69 5.4 4.07 3.7 1.64 1.15c-.4.68-.63 1.47-.63 2.32 0 1.6.81 3.01 2.05 3.84A4.48 4.48 0 01.96 6v.06c0 2.24 1.6 4.1 3.72 4.52-.39.11-.8.17-1.22.17-.3 0-.59-.03-.87-.08.59 1.85 2.3 3.2 4.33 3.24A9.06 9.06 0 010 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.39-.01-.58A9.22 9.22 0 0023 3z"/></svg>
+                    <svg class="h-6 w-6 sm:h-8 sm:w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.4.36a9.09 9.09 0 01-2.88 1.1A4.52 4.52 0 0016.11 0c-2.5 0-4.52 2.02-4.52 4.52 0 .36.04.71.11 1.05C7.69 5.4 4.07 3.7 1.64 1.15c-.4.68-.63 1.47-.63 2.32 0 1.6.81 3.01 2.05 3.84A4.48 4.48 0 01.96 6v.06c0 2.24 1.6 4.1 3.72 4.52-.39.11-.8.17-1.22.17-.3 0-.59-.03-.87-.08.59 1.85 2.3 3.2 4.33 3.24A9.06 9.06 0 010 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.39-.01-.58A9.22 9.22 0 0023 3z"/></svg>
                 </a>
                 <a href="#" class="rounded-full p-2 bg-gray-800 hover:bg-gray-700 transition" aria-label="Instagram">
-                    <svg class="h-8 w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                    <svg class="h-6 w-6 sm:h-8 sm:w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 </a>
                 <a href="#" class="rounded-full p-2 bg-gray-800 hover:bg-gray-700 transition" aria-label="LinkedIn">
-                    <svg class="h-8 w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><line x1="16" x2="16" y1="8" y2="16"/><line x1="8" x2="8" y1="8" y2="16"/><line x1="12" x2="12" y1="12" y2="16"/></svg>
+                    <svg class="h-6 w-6 sm:h-8 sm:w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><line x1="16" x2="16" y1="8" y2="16"/><line x1="8" x2="8" y1="8" y2="16"/><line x1="12" x2="12" y1="12" y2="16"/></svg>
                 </a>
                 <a href="#" class="rounded-full p-2 bg-gray-800 hover:bg-gray-700 transition" aria-label="YouTube">
-                    <svg class="h-8 w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><polygon points="10 15 15 12 10 9 10 15"/></svg>
+                    <svg class="h-6 w-6 sm:h-8 sm:w-8 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><polygon points="10 15 15 12 10 9 10 15"/></svg>
                 </a>
             </div>
         </div>
 
         <!-- Contact Info -->
-        <div class="space-y-4">
-            <h3 class="text-lg font-semibold">Get In Touch</h3>
-            <ul class="text-sm text-gray-300 space-y-1">
+        <div class="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left text-sm break-words">
+            <h3 class="text-base sm:text-lg font-semibold">Get In Touch</h3>
+            <ul class="text-xs sm:text-sm text-gray-300 space-y-1">
                 <li>leseangbok15@gmail.com</li>
                 <li>+9855 97 536 0168</li>
                 <li>in your heart, Babe</li>
@@ -36,18 +39,18 @@
         </div>
 
         <!-- Navigation Links -->
-        <div class="grid grid-cols-2 gap-6">
-            <div class="space-y-3">
-                <h3 class="text-lg font-semibold">Quick Links</h3>
-                <nav class="flex flex-col text-sm text-gray-300 space-y-1">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+            <div class="space-y-2 flex flex-col items-center sm:items-start text-center sm:text-left text-sm">
+                <h3 class="text-base sm:text-lg font-semibold">Quick Links</h3>
+                <nav class="flex flex-col text-xs sm:text-sm text-gray-300 space-y-1">
                     <a href="#" class="hover:underline">Home</a>
                     <a href="#" class="hover:underline">FAQs</a>
                     <a href="#" class="hover:underline">Features</a>
                 </nav>
             </div>
-            <div class="space-y-3">
-                <h3 class="text-lg font-semibold">Company</h3>
-                <nav class="flex flex-col text-sm text-gray-300 space-y-1">
+            <div class="space-y-2 flex flex-col items-center sm:items-start text-center sm:text-left text-sm">
+                <h3 class="text-base sm:text-lg font-semibold">Company</h3>
+                <nav class="flex flex-col text-xs sm:text-sm text-gray-300 space-y-1">
                     <a href="#" class="hover:underline">Careers</a>
                     <a href="#" class="hover:underline">About</a>
                     <a href="#" class="hover:underline">Contact</a>
@@ -56,13 +59,13 @@
             </div>
         </div>
         <!-- Newsletter Signup -->
-        <div class="space-y-4">
-            <h3 class="text-lg font-semibold">Newsletter Signup</h3>
-            <form action="#" method="POST" class="flex flex-col space-y-2">
+        <div class="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left text-sm">
+            <h3 class="text-base sm:text-lg font-semibold">Newsletter Signup</h3>
+            <form action="#" method="POST" class="flex flex-col space-y-2 w-full max-w-xs mx-auto sm:mx-0">
                 <input type="email" name="email" placeholder="Enter your email"
-                       class="w-full px-4 py-2 rounded-md bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                       class="w-full px-3 py-2 rounded-md bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-xs sm:text-sm">
                 <button type="submit"
-                        class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                        class="w-full px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-xs sm:text-sm">
                     Subscribe
                 </button>
             </form>
@@ -70,7 +73,7 @@
     </div>
 
     <!-- Bottom Bar -->
-    <div class="border-t border-gray-700 py-4 text-center text-sm bg-gray-900">
+    <div class="border-t border-gray-700 py-3 sm:py-4 text-center text-xs sm:text-sm bg-gray-900">
         <div class="container mx-auto">
             <p class="text-gray-400">
                 © 2025 E-Lib. All rights reserved.

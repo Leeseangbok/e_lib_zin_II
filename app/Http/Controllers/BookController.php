@@ -43,7 +43,7 @@ class BookController extends Controller
         }
 
         // Get the paginated list of books
-        $books = $query->latest()->paginate(25);
+        $books = $query->latest()->paginate(24);
 
         // Pass the books and the category name to the view
         return view('books.index', compact('books', 'categoryName'));

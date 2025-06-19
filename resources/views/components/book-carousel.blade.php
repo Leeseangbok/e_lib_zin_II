@@ -1,26 +1,51 @@
 @props(['title', 'books'])
 
-<div class="mt-10 shadow-lg bg-gray-800 rounded-lg p-6">
-    {{-- Title for the carousel section --}}
-    <h2 class="text-2xl font-semibold text-white">{{ $title }}</h2> <!-- Removed text-center -->
+{{--
+    The main container now has responsive padding.
+    p-4 on small screens, p-6 on screens 640px and wider.
+--}}
+<div class="mt-10 shadow-lg bg-gray-800 rounded-lg p-4 sm:p-6">
+    {{--
+        The title now has a responsive font size.
+        text-xl on small screens, text-2xl on screens 640px and wider.
+    --}}
+    <h2 class="text-xl sm:text-2xl font-semibold text-white">{{ $title }}</h2>
 
     @if($books->isNotEmpty())
-        <!-- The Splide Carousel -->
-        <section class="splide mt-8" aria-labelledby="carousel-{{ \Illuminate\Support\Str::slug($title) }}-heading">
+        <section
+            class="splide mt-8"
+            aria-labelledby="carousel-{{ \Illuminate\Support\Str::slug($title) }}-heading"
+            data-splide='{"type":"loop","perPage":5, "perMove":1, "gap":"1rem", "pagination":false, "breakpoints": {"1024": {"perPage": 4}, "768": {"perPage": 3}, "640": {"perPage": 2} }}'
+        >
             <div class="splide__track">
                 <ul class="splide__list">
                     @foreach($books as $book)
                         <li class="splide__slide">
-                            <div class="flex flex-col bg-gray-900 p-2 rounded-lg overflow-hidden shadow-sm m-2">
+                            {{--
+                                Removed margin `m-2` as Splide's `gap` now handles spacing.
+                                The card itself has p-2 padding.
+                            --}}
+                            <div class="flex flex-col bg-gray-900 p-2 rounded-lg overflow-hidden shadow-sm h-full">
                                 <a href="{{ route('books.show', $book) }}">
                                     <img
-                                        class="h-64 w-full object-cover rounded-lg transition-transform duration-300 ease-in-out hover:scale-105"
+                                        {{--
+                                            Responsive image height.
+                                            - Default (mobile): h-48 (12rem)
+                                            - Medium screens (md): h-56 (14rem)
+                                            - Large screens (lg): h-64 (16rem)
+                                            This makes the card smaller on mobile.
+                                        --}}
+                                        class="h-48 md:h-56 lg:h-64 w-full object-cover rounded-lg transition-transform duration-300 ease-in-out hover:scale-105"
                                         src="{{ $book->cover_image_url ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
                                         alt="Cover of {{ $book->title }}">
                                 </a>
+                                {{--
+                                    Used `flex-grow` to ensure the text container fills available space,
+                                    making all cards in a row the same height.
+                                --}}
                                 <div class="py-4 flex flex-col flex-grow">
-                                    <h3 class="font-semibold text-sm winky truncate">{{ $book->title }}</h3>
-                                    <p class="text-sm text-gray-600 truncate">{{ $book->author }}</p>
+                                    <h3 class="font-semibold text-sm text-white truncate">{{ $book->title }}</h3>
+                                    <p class="text-sm text-gray-400 truncate">{{ $book->author }}</p>
                                 </div>
                             </div>
                         </li>

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Responsive meta tag -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
@@ -32,13 +32,15 @@
         @endif
 
         <main class="bg-gray-900 text-white flex-grow">
-            {{ $slot }}
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+                {{ $slot }}
+            </div>
         </main>
 
-        <div class="bg-gray-900">@include('layouts.footer')</div>
-
+        <div class="bg-gray-900">
+            @include('layouts.footer')
+        </div>
     </div>
-
 
     @stack('scripts')
 </body>

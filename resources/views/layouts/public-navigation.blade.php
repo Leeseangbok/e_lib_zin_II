@@ -1,7 +1,6 @@
 <nav x-data="{ open: false }" class="bg-gradient-to-r from-gray-700 to-gray-800 shadow">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
-            <!-- Logo and Navigation -->
             <div class="flex items-center space-x-8">
                 <a href="{{ route('welcome') }}" class="flex items-center space-x-2">
                     <img src="{{ asset('e_lib_logo.png') }}" alt="E-Lib Logo"
@@ -10,15 +9,14 @@
                 </a>
                 <div class="hidden md:flex space-x-6 winky">
                     <x-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
-                {{ __('Home') }}
-            </x-nav-link>
-            <x-nav-link :href="route('books.index')" :active="request()->routeIs('books.index')">
-                {{ __('Books') }}
-            </x-nav-link>
+                        {{ __('Home') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('books.index')" :active="request()->routeIs('books.index')">
+                        {{ __('Books') }}
+                    </x-nav-link>
                 </div>
             </div>
 
-            <!-- Search Bar -->
             <div class="flex-1 flex justify-center px-4">
                 <form action="{{ route('books.index') }}" method="GET" class="w-full max-w-md">
                     <div class="relative">
@@ -36,7 +34,6 @@
                 </form>
             </div>
 
-            <!-- User Auth / Links -->
             <div class="hidden md:flex items-center space-x-4">
                 @auth
                     <x-dropdown align="right" width="48">
@@ -62,7 +59,7 @@
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault(); this.closest('form').submit();">
+                                        onclick="event.preventDefault(); this.closest('form').submit();">
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
@@ -77,6 +74,65 @@
                     @endif
                 @endauth
             </div>
+
+            <div class="-mr-2 flex items-center md:hidden">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:bg-gray-700 focus:text-white transition">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden">
+        <div class="pt-2 pb-3  text-white space-y-1">
+            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
+                {{ __('Home') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('books.index')" :active="request()->routeIs('books.index')">
+                {{ __('Books') }}
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-4 pb-1 border-t border-gray-700">
+            @auth
+                <div class="px-4">
+                    <div class="font-medium text-base text-white">{{ Auth::user()->name }}</div>
+                    <div class="font-medium text-sm text-gray-400">{{ Auth::user()->email }}</div>
+                </div>
+
+                <div class="mt-3 space-y-1">
+                    <x-responsive-nav-link :href="route('profile.edit')">
+                        {{ __('Profile') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('library.index')">
+                        {{ __('My Library') }}
+                    </x-responsive-nav-link>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+
+                        <x-responsive-nav-link :href="route('logout')"
+                                onclick="event.preventDefault();
+                                            this.closest('form').submit();">
+                            {{ __('Log Out') }}
+                        </x-responsive-nav-link>
+                    </form>
+                </div>
+            @else
+                <div class="space-y-1">
+                    <x-responsive-nav-link :href="route('login')">
+                        {{ __('Log in') }}
+                    </x-responsive-nav-link>
+                    @if (Route::has('register'))
+                        <x-responsive-nav-link :href="route('register')">
+                            {{ __('Register') }}
+                        </x-responsive-nav-link>
+                    @endif
+                </div>
+            @endauth
         </div>
     </div>
 </nav>

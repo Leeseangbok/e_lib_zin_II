@@ -17,26 +17,23 @@
 </head>
 
 <body class="font-sans bg-gray-900 min-h-screen antialiased">
-    <div class="flex h-screen bg-gray-900">
-        <!-- Left Sidebar -->
-        <div class="hidden lg:flex w-1/2 bg-purple-900 text-white p-12 flex-col justify-between relative">
-            <div class="absolute top-10 left-10">
-                <h1 class="text-4xl font-bold mb-4">Welcome to E-Lib</h1>
-                <p class="text-lg">Your digital library awaits.</p>
-            </div>
-            <div class="my-auto">
-                <img src="/background.png" alt="Bookshelf and reading glasses" class="max-w-md mx-auto">
-            </div>
-            <div class="text-sm">
-                <p><strong>Email Support:</strong> support@elib.com</p>
-                <p><strong>Phone Support:</strong> +1 (234) 567-890</p>
+    <div class="flex flex-col items-center min-h-screen bg-gray-900">
+        <!-- Compact Header -->
+        <div class="w-full max-w-md bg-purple-900 text-white rounded-b-lg px-4 py-6 flex flex-col items-center shadow-md">
+            <h1 class="text-xl sm:text-2xl font-bold mb-1">Welcome to E-Lib</h1>
+            <p class="text-sm sm:text-base mb-2">Your digital library awaits.</p>
+            <img src="/background.png" alt="Bookshelf and reading glasses" class="w-20 sm:w-28 mb-2">
+            <div class="text-xs text-center">
+                <p><strong>Email:</strong> support@elib.com</p>
+                <p><strong>Phone:</strong> +1 (234) 567-890</p>
             </div>
         </div>
         <!-- Main Content -->
-        <div class="w-full lg:w-1/2 bg-gray-900 p-8 sm:p-12 flex items-center justify-center">
-            <div class="w-full flex flex-col justify-center">
+        <div class="w-full max-w-md bg-gray-900 flex flex-col items-center justify-center flex-1">
+            <div class="w-full">
                 {{ $slot }}
             </div>
-                 </div>
-    </body>
+        </div>
+    </div>
+</body>
 </html>
