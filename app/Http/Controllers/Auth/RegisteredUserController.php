@@ -21,7 +21,8 @@ class RegisteredUserController extends Controller
     {
         return view('auth.register');
     }
-/**
+
+    /**
      * Handle an incoming registration request.
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -38,15 +39,13 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            // The 'role' column will automatically default to 'user'
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        // --- THIS IS THE MODIFIED LINE ---
-        // Redirect the new user to their personalized home page.
-        return redirect()->route('welcome', ['user' => $user->name]);
+        // MODIFIED: Redirect to the named 'home' route with the user's name
+        return redirect()->route('home', ['user' => $user->name]);
     }
 }

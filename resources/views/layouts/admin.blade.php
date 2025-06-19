@@ -1,43 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - @yield('title', 'Dashboard')</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    @stack('styles')
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'Laravel') }} - Admin</title>
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Joti+One&family=Winky+Sans:ital,wght@0,300..900;1,300..900&display=swap"
+        rel="stylesheet">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="{{ route('admin.dashboard') }}">Admin Panel</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.users') }}">Users</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.books') }}">Books</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('logout') }}">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <aside class="col-md-2 bg-light sidebar py-4">
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.users') }}">Manage Users</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.books') }}">Manage Books</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.settings') }}">Settings</a></li>
-                </ul>
-            </aside>
-            <main class="col-md-10">
-                @yield('content')
-            </main>
-        </div>
+
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-gray-100">
+        {{-- This includes the navigation menu --}}
+        @include('layouts.navigation')
+
+        @if (isset($header))
+            <header class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
+        @endif
+
+        <main>
+            {{-- This is where the content from your other pages will be injected --}}
+            {{ $slot }}
+        </main>
     </div>
-    <footer class="footer bg-dark text-white text-center py-3 mt-4">
-        &copy; {{ date('Y') }} e-Library Admin Panel
-    </footer>
-    <script src="{{ asset('js/app.js') }}"></script>
-    @stack('scripts')
 </body>
+
 </html>

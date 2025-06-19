@@ -18,26 +18,28 @@ class BookController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+ public function index(Request $request)
     {
-        $query = Book::query()->with('category:id,name,slug');
+        $query = Book::query();
+        $categoryName = null; // <-- MODIFIED: Initialize $categoryName to null
 
-        if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('author', 'like', '%' . $request->search . '%');
+        // Check if a category filter is present in the request
+        if ($request->has('category')) {
+            // Find the category by its slug
+            $category = Category::where('slug', $request->category)->firstOrFail();
+            // Filter books by the found category's ID
+            $query->where('category_id', $category->id);
+            // Set the category name for the view
+            $categoryName = $category->name;
         }
 
-        if ($request->filled('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->category);
-            });
-        }
-
+        // Get the paginated list of books
         $books = $query->latest()->paginate(12);
-        $categories = Category::all();
 
-        return view('books.index', compact('books', 'categories'));
+        // Pass the books and the category name (which is now always defined) to the view
+        return view('books.index', compact('books', 'categoryName'));
     }
+
 
     /**
      * Display the specified resource.

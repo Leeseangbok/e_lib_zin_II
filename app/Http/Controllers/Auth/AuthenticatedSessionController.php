@@ -19,7 +19,7 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login');
     }
 
- /**
+    /**
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
@@ -27,21 +27,20 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-        // === Role-Based Redirect Logic ===
 
+        // === Role-Based Redirect Logic ===
         $user = Auth::user();
 
         // Check if the user is an admin using the helper method from the User model.
         if ($user->isAdmin()) {
-            // If admin, redirect to the dashboard route.
-            return redirect()->route('dashboard');
+            // If admin, redirect to the admin dashboard route.
+            return redirect()->route('admin.dashboard');
         }
 
-        // If not admin, redirect to the home page.
-        return redirect()->route('welcome', ['user' => $user->name]);
-
-        // Otherwise, redirect regular users to their personalized home page.
+        // If not admin, redirect to the regular user home page.
+        return redirect()->route('home', ['user' => $user->name]);
     }
+
     /**
      * Destroy an authenticated session.
      */

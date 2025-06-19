@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-white leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{-- If a category is being filtered, show its name. Otherwise, show "Browse Books". --}}
             {{ $categoryName ? 'Books in: ' . $categoryName : 'Browse All Books' }}
         </h2>

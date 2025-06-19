@@ -19,7 +19,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // <-- 1. ADD 'role' HERE
+        'role', // <-- MODIFIED: Added 'role'
     ];
 
     protected $hidden = [
@@ -38,7 +38,7 @@ class User extends Authenticatable
     /**
      * Check if the user has the 'admin' role.
      */
-    public function isAdmin(): bool // <-- 2. ADD THIS ENTIRE METHOD
+    public function isAdmin(): bool // <-- MODIFIED: Added this method
     {
         return $this->role === 'admin';
     }

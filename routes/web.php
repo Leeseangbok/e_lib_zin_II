@@ -25,13 +25,6 @@ Route::get('/categories', [CategoryController::class, 'index'])->name('categorie
 Route::get('/categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 
 
-// --- ADMIN-ONLY ROUTE ---
-// The dashboard is now for admins. We use a separate middleware for this.
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard'); // We'll add an 'admin' middleware later
-
-
 // --- AUTHENTICATED USER ACTIONS ---
 Route::middleware('auth')->group(function () {
     // Profile editing routes
@@ -47,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/books/{book}/read', [BookController::class, 'read'])->name('books.read');
 });
 
-// --- DO NOT EDIT BELOW ---
 // Includes all the necessary login, registration, password reset routes, etc.
 require __DIR__ . '/auth.php';
+
+// Admin routes
+require __DIR__ . '/admin.php';
