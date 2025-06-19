@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
 
     // Review and Library routes
     Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/library/add/{book}', [LibraryController::class, 'add'])->name('library.add');
     Route::delete('/library/remove/{book}', [LibraryController::class, 'remove'])->name('library.remove');
     Route::get('/my-library', [LibraryController::class, 'index'])->name('library.index');

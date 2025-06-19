@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class ReviewController extends Controller
 {
@@ -33,5 +35,23 @@ class ReviewController extends Controller
         );
 
         return back()->with('success', 'Your review has been successfully submitted/updated!');
+    }
+
+    /**
+     * Remove the specified review from storage.
+     *
+     * @param  \App\Models\Review  $review
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy(Review $review)
+    {
+        // Authorize that the user can delete the review
+        if (Auth::id() !== $review->user_id && !Auth::user()->isAdmin()) {
+            throw new AuthorizationException('You are not authorized to delete this review.');
+        }
+
+        $review->delete();
+
+        return back()->with('success', 'Your review has been successfully deleted.');
     }
 }
