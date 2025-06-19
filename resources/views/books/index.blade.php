@@ -28,18 +28,18 @@
                         @forelse ($books as $book)
                             <div
                                 class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-md transition-shadow duration-300">
-                                <a href="{{ route('books.show', $book) }}" class="flex flex-col h-full">
+                                <a href="{{ route('books.show', $book['id']) }}" class="flex flex-col h-full">
                                     <img class="w-full object-cover rounded-t-lg transition-transform duration-300 ease-in-out hover:scale-105
                     h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72"
-                                        src="{{ $book->cover_image_url ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
-                                        alt="Cover of {{ $book->title }}">
+                                       src="{{ $book['formats']['image/jpeg'] ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
+                                        alt="Cover of {{ $book['title'] }}">
 
                                     <div class="flex flex-col flex-grow p-2 sm:p-3 md:p-4">
                                         <h3 class="font-semibold text-xs sm:text-sm md:text-base text-white truncate">
-                                            {{ $book->title }}
+                                             {{ $book['title'] }}
                                         </h3>
                                         <p class="text-[10px] sm:text-xs md:text-sm text-gray-300 truncate">
-                                            {{ $book->author }}
+                                            {{ $book['authors'][0]['name'] ?? 'Unknown Author' }}
                                         </p>
                                     </div>
                                 </a>

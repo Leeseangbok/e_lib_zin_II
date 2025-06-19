@@ -24,30 +24,26 @@
             @endif
 
             <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-10">
+                {{-- LEFT SIDEBAR --}}
                 <div class="w-full lg:w-1/4 lg:sticky top-6 h-max">
                     <div class="bg-gray-800 p-2 sm:p-4 rounded-lg shadow-lg">
                         <img src="{{ $book->cover_image_url ?? 'https://via.placeholder.com/400x600.png?text=No+Cover' }}"
-                            alt="Cover of {{ $book->title }}"
-                            class="w-24 h-auto sm:w-full mx-auto rounded-md shadow-md">
+                             alt="Cover of {{ $book->title }}"
+                             class="w-24 h-auto sm:w-full mx-auto rounded-md shadow-md">
                         <div class="mt-4 flex flex-col gap-2 sm:gap-3">
-                            <a href="{{ route('books.read', $book) }}"
-                                class="w-full text-center py-2 sm:py-3 px-2 sm:px-4 bg-indigo-600 text-white font-bold rounded-md hover:bg-indigo-700 transition text-sm sm:text-base">Read
-                                Now</a>
+                            <a href="{{ route('books.read', $book->id) }}"
+                               class="w-full text-center py-2 sm:py-3 px-2 sm:px-4 bg-indigo-600 text-white font-bold rounded-md hover:bg-indigo-700 transition text-sm sm:text-base">Read Now</a>
                             @auth
                                 @if (Auth::user()->favoriteBooks->contains($book))
-                                    <form action="{{ route('library.remove', $book) }}" method="POST">
+                                    <form action="{{ route('library.remove', $book->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
-                                            class="w-full py-2 sm:py-3 px-2 sm:px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 transition text-sm sm:text-base">Remove
-                                            from Library</button>
+                                        <button type="submit" class="w-full py-2 sm:py-3 px-2 sm:px-4 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 transition text-sm sm:text-base">Remove from Library</button>
                                     </form>
                                 @else
-                                    <form action="{{ route('library.add', $book) }}" method="POST">
+                                    <form action="{{ route('library.add', $book->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit"
-                                            class="w-full py-2 sm:py-3 px-2 sm:px-4 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 transition text-sm sm:text-base">Add
-                                            to Library</button>
+                                        <button type="submit" class="w-full py-2 sm:py-3 px-2 sm:px-4 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 transition text-sm sm:text-base">Add to Library</button>
                                     </form>
                                 @endif
                             @endauth
@@ -55,85 +51,66 @@
                     </div>
                 </div>
 
+                {{-- MAIN CONTENT --}}
                 <div class="w-full lg:w-3/4">
                     <div class="bg-gray-800 p-3 sm:p-6 md:p-8 rounded-lg shadow-lg">
-                        <h1 class="text-xl sm:text-3xl md:text-5xl font-bold text-white leading-tight break-words">
-                            {{ $book->title }}</h1>
-                        <p class="mt-2 text-sm sm:text-xl text-gray-400">by <a href="#"
-                                class="text-indigo-400 hover:underline">{{ $book->author }}</a></p>
+                        <h1 class="text-xl sm:text-3xl md:text-5xl font-bold text-white leading-tight break-words">{{ $book->title }}</h1>
+                        <p class="mt-2 text-sm sm:text-xl text-gray-400">by <a href="#" class="text-indigo-400 hover:underline">{{ $book->author }}</a></p>
 
                         <div class="flex flex-col xs:flex-row items-start xs:items-center mt-4 gap-1 xs:gap-0">
                             <x-star-rating :rating="$book->reviews->avg('rating')" />
-                            <span
-                                class="ml-0 xs:ml-2 text-gray-400 text-xs sm:text-base">({{ number_format($book->reviews->avg('rating'), 1) }}
-                                average rating)</span>
+                            <span class="ml-0 xs:ml-2 text-gray-400 text-xs sm:text-base">({{ number_format($book->reviews->avg('rating'), 1) }} average rating)</span>
                         </div>
 
+                        {{-- Description section --}}
                         <div class="mt-4 sm:mt-6 border-t border-gray-700 pt-4 sm:pt-6">
                             <h3 class="text-lg sm:text-2xl font-semibold text-white mb-2 sm:mb-4">Description</h3>
-                            <p class="text-gray-300 leading-relaxed text-sm sm:text-base">{{ $book->description }}</p>
+                            <p class="text-gray-300 leading-relaxed text-sm sm:text-base">
+                                @if(!empty($book->subjects))
+                                    This book covers subjects such as: {{ implode(', ', array_slice($book->subjects, 0, 5)) }}.
+                                @else
+                                    No description available.
+                                @endif
+                            </p>
                         </div>
 
+                        {{-- Details section --}}
                         <div class="mt-4 sm:mt-6 border-t border-gray-700 pt-4 sm:pt-6">
                             <h3 class="text-lg sm:text-2xl font-semibold text-white mb-2 sm:mb-4">Details</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-gray-300">
                                 <div class="bg-gray-700 p-2 sm:p-4 rounded-lg text-xs sm:text-base">
-                                    <span class="font-semibold text-white">Publication Date:</span>
-                                    {{ $book->publication_date ? \Carbon\Carbon::parse($book->publication_date)->format('F j, Y') : 'N/A' }}
+                                    <span class="font-semibold text-white">Publication Date:</span> N/A
                                 </div>
                                 <div class="bg-gray-700 p-2 sm:p-4 rounded-lg text-xs sm:text-base">
-                                    <span class="font-semibold text-white">Publisher:</span>
-                                    {{ $book->publisher ?? 'N/A' }}
+                                    <span class="font-semibold text-white">Publisher:</span> N/A
                                 </div>
                                 <div class="bg-gray-700 p-2 sm:p-4 rounded-lg text-xs sm:text-base">
                                     <span class="font-semibold text-white">Language:</span>
-                                    {{ Str::upper($book->language) }}
+                                    {{-- THIS IS THE FIX: Provide an empty array [] as a default if $book->languages is null --}}
+                                    {{ Str::upper(implode(', ', $book->languages ?? [])) }}
                                 </div>
                                 <div class="bg-gray-700 p-2 sm:p-4 rounded-lg text-xs sm:text-base">
-                                    <span class="font-semibold text-white">Pages:</span>
-                                    {{ $book->page_count ?? 'N/A' }}
+                                    <span class="font-semibold text-white">Pages:</span> N/A
                                 </div>
-                                <div
-                                    class="bg-gray-700 p-2 sm:p-4 rounded-lg col-span-1 sm:col-span-2 text-xs sm:text-base">
-                                    <span class="font-semibold text-white">ISBN:</span> {{ $book->isbn ?? 'N/A' }}
+                                <div class="bg-gray-700 p-2 sm:p-4 rounded-lg col-span-1 sm:col-span-2 text-xs sm:text-base">
+                                    <span class="font-semibold text-white">ISBN:</span> N/A
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Gutenberg Details Section --}}
-                        @if (!empty($gutenbergData['subjects']) || !empty($gutenbergData['bookshelves']))
-                            <div class="mt-4 sm:mt-6 border-t border-gray-700 pt-4 sm:pt-6">
-                                <h3 class="text-lg sm:text-2xl font-semibold text-white mb-2 sm:mb-4">Book Details</h3>
-                                <div class="flex flex-col gap-2 sm:gap-4 text-gray-300">
-                                    @if (!empty($gutenbergData['subjects']))
-                                        <div>
-                                            <h4 class="font-semibold text-white mb-1 sm:mb-2">Subjects:</h4>
-                                            <div class="flex flex-wrap gap-1 sm:gap-2">
-                                                @foreach (array_slice($gutenbergData['subjects'], 0, 10) as $subject)
-                                                    <span
-                                                        class="bg-gray-700 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">{{ $subject }}</span>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                    @if (!empty($gutenbergData['bookshelves']))
-                                        <div>
-                                            <h4 class="font-semibold text-white mb-1 sm:mb-2">Bookshelves:</h4>
-                                            <div class="flex flex-wrap gap-1 sm:gap-2">
-                                                @foreach (array_slice($gutenbergData['bookshelves'], 0, 10) as $bookshelf)
-                                                    <span
-                                                        class="bg-gray-700 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">{{ $bookshelf }}</span>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
+                        {{-- "About This eBook" section --}}
+                        <div class="mt-4 sm:mt-6 border-t border-gray-700 pt-4 sm:pt-6">
+                            <h3 class="text-lg sm:text-2xl font-semibold text-white mb-2 sm:mb-4">About This eBook</h3>
+                            <div class="space-y-3 text-gray-300">
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">Author:</strong><span class="w-full sm:w-3/4">{{ $book->author }}</span></div>
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">Title:</strong><span class="w-full sm:w-3/4">{{ $book->title }}</span></div>
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">Category:</strong><span class="w-full sm:w-3/4">{{ $book->media_type }}</span></div>
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">EBook-No.:</strong><span class="w-full sm:w-3/4">{{ $book->id }}</span></div>
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">Copyright Status:</strong><span class="w-full sm:w-3/4">{{ $book->copyright ? 'Copyrighted' : 'Public domain in the USA.' }}</span></div>
+                                <div class="flex flex-wrap"><strong class="w-full sm:w-1/4 font-semibold text-white">Downloads:</strong><span class="w-full sm:w-3/4">{{ number_format($book->download_count) }} total</span></div>
                             </div>
-                        @endif
-                        {{-- End of Gutenberg Details Section --}}
-
+                        </div>
                     </div>
-
                     <div id="reviews" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
                         <h3
                             class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
@@ -215,31 +192,28 @@
                         @endif
                     </div>
 
-                    @if ($relatedBooks->isNotEmpty())
-                        <div class="mt-6 sm:mt-10">
-                            <h3 class="text-2xl sm:text-3xl font-semibold text-white mb-4 sm:mb-6">Related Books</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                @foreach ($relatedBooks as $relatedBook)
-                                    <div
-                                        class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-md transition-shadow duration-300 h-full">
-                                        <a href="{{ route('books.show', $relatedBook) }}"
-                                            class="flex flex-col h-full">
-                                            <img class="w-full object-cover rounded-t-lg transition-transform duration-300 ease-in-out hover:scale-105 aspect-[2/3] max-h-56 md:max-h-72 lg:max-h-80"
-                                                src="{{ $relatedBook->cover_image_url ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
-                                                alt="Cover of {{ $relatedBook->title }}">
-                                            <div class="flex flex-col flex-grow p-2 sm:p-3 md:p-4">
-                                                <h3
-                                                    class="font-semibold text-xs sm:text-sm md:text-base text-white truncate">
-                                                    {{ $relatedBook->title }}
-                                                </h3>
-                                                <p class="text-[10px] sm:text-xs md:text-sm text-gray-300 truncate">
-                                                    {{ $relatedBook->author }}
-                                                </p>
+                    @if (!empty($relatedBooks))
+                        <h2 class="text-xl font-bold mb-4">You might also like</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach ($relatedBooks as $relatedBook)
+                                {{-- Check if the book data is valid before trying to display it --}}
+                                @if (isset($relatedBook['id']) && isset($relatedBook['title']))
+                                    <a href="{{ route('books.show', $relatedBook['id']) }}" class="book-card-link">
+                                        <div class="book-card">
+                                            {{-- Use array syntax and check if the cover image exists --}}
+                                            <img src="{{ $relatedBook['formats']['image/jpeg'] ?? asset('images/default_cover.png') }}"
+                                                alt="Cover of {{ $relatedBook['title'] }}" class="book-cover">
+                                            <div class="book-info">
+                                                {{-- Use array syntax --}}
+                                                <h3 class="book-title">{{ $relatedBook['title'] }}</h3>
+                                                {{-- Use array syntax and check if authors exist --}}
+                                                <p class="book-author">
+                                                    {{ $relatedBook['authors'][0]['name'] ?? 'Unknown Author' }}</p>
                                             </div>
-                                        </a>
-                                    </div>
-                                @endforeach
-                            </div>
+                                        </div>
+                                    </a>
+                                @endif
+                            @endforeach
                         </div>
                     @endif
                 </div>

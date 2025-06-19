@@ -4,154 +4,101 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use Illuminate\Http\Request;
+use App\Services\GutendexService;
+use App\Jobs\ProcessBookContent;
+use Illuminate\Pagination\LengthAwarePaginator;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
-use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\GithubFlavoredMarkdownConverter;
-use App\Models\Category;
-use Illuminate\Support\Facades\Http;
 
 class BookController extends Controller
 {
+    protected $gutendexService;
+
+    public function __construct(GutendexService $gutendexService)
+    {
+        $this->gutendexService = $gutendexService;
+    }
+
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * Display a listing of the resource from the API.
      */
     public function index(Request $request)
     {
-        $query = Book::query();
-        $categoryName = null;
+        $page = $request->input('page', 1);
+        $search = $request->input('search');
 
-        // NEW: Handle search query
-        if ($request->has('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                  ->orWhere('author', 'like', "%{$searchTerm}%");
-            });
-        }
+        // Fetch book list directly from the Gutenberg API
+        $bookData = $this->gutendexService->getBooks($page, $search);
 
-        // Check if a category filter is present in the request
-        if ($request->has('category')) {
-            // Find the category by its slug
-            $category = Category::where('slug', $request->category)->firstOrFail();
-            // Filter books by the found category's ID
-            $query->where('category_id', $category->id);
-            // Set the category name for the view
-            $categoryName = $category->name;
-        }
+        $totalResults = $bookData['count'] ?? 0;
+        $perPage = 32; // Gutendex API returns 32 items per page
+        $items = $bookData['results'] ?? [];
 
-        // Get the paginated list of books
-        $books = $query->latest()->paginate(24);
+        // Create a Paginator so your Blade views can use ->hasPages() and ->links()
+        $books = new LengthAwarePaginator(
+            $items,
+            $totalResults,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
-        // Pass the books and the category name to the view
-        return view('books.index', compact('books', 'categoryName'));
+        return view('books.index', [
+            'books' => $books,
+            'categoryName' => $search ? 'Search Results' : 'Browse All Books'
+        ]);
     }
-
 
     /**
      * Display the specified resource.
-     *
-     * @param  \App\Models\Book  $book
-     * @return \Illuminate\Http\Response
+     * Fetches from API on first visit, then loads from local DB.
      */
-    public function show(Book $book)
+    public function show($id)
     {
-        // --- Google Books API Integration ---
-        $searchQuery = $book->isbn ? 'isbn:' . $book->isbn : 'intitle:' . urlencode($book->title);
-        $googleResponse = Http::get("https://www.googleapis.com/books/v1/volumes?q={$searchQuery}&maxResults=1");
+        // On first visit, fetch from API and create the record in our database.
+        Book::firstOrCreate(
+            ['id' => $id],
+            $this->gutendexService->getBookById($id)
+        );
 
-        if ($googleResponse->successful() && $googleResponse->json('totalItems') > 0) {
-            $volumeInfo = $googleResponse->json('items')[0]['volumeInfo'];
+        // Now, load the book from our local database. This is faster.
+        $book = Book::findOrFail($id);
 
-            // Clean and set the publication date
-            if (empty($book->publication_date) && isset($volumeInfo['publishedDate'])) {
-                $cleanedDate = preg_replace('/[^\d\-]/', '', $volumeInfo['publishedDate']);
-                $book->publication_date = $cleanedDate;
-            }
+        // Fetch related books from API based on the author.
+        $relatedBooksData = $this->gutendexService->getBooks(1, $book->author);
+        $relatedBooks = array_slice($relatedBooksData['results'] ?? [], 0, 5);
 
-            if (empty($book->publisher) && isset($volumeInfo['publisher'])) {
-                $book->publisher = $volumeInfo['publisher'];
-            }
-
-            if (empty($book->language) && isset($volumeInfo['language'])) {
-                $book->language = $volumeInfo['language'];
-            }
-
-            if (empty($book->page_count) && isset($volumeInfo['pageCount'])) {
-                $book->page_count = $volumeInfo['pageCount'];
-            }
-
-            if (empty($book->isbn) && isset($volumeInfo['industryIdentifiers'])) {
-                foreach ($volumeInfo['industryIdentifiers'] as $identifier) {
-                    if ($identifier['type'] === 'ISBN_13') {
-                        $book->isbn = $identifier['identifier'];
-                        break;
-                    }
-                    if ($identifier['type'] === 'ISBN_10') {
-                        $book->isbn = $identifier['identifier'];
-                    }
-                }
-            }
-        }
-
-        // --- Gutendex (Project Gutenberg) API Integration ---
-        $gutenbergData = [];
-        $gutendexResponse = Http::get("https://gutendex.com/books?search=" . urlencode($book->title));
-
-        if ($gutendexResponse->successful() && $gutendexResponse->json('count') > 0) {
-            $gutenbergBook = $gutendexResponse->json('results')[0];
-            $gutenbergData['subjects'] = $gutenbergBook['subjects'] ?? [];
-            $gutenbergData['bookshelves'] = $gutenbergBook['bookshelves'] ?? [];
-
-            if (empty($book->language) && !empty($gutenbergBook['languages'])) {
-                $book->language = $gutenbergBook['languages'][0] ?? null;
-            }
-        }
-
-        // --- Eager Loading and Related Books ---
-        $book->load([
-            'category:id,name,slug',
-            'reviews' => function ($query) {
-                $query->with('user:id,name')->latest();
-            }
-        ]);
-
-        $relatedBooks = Book::query()
-            ->select('id', 'title', 'author', 'cover_image_url')
-            ->where('category_id', $book->category_id)
-            ->where('id', '!=', $book->id)
-            ->inRandomOrder()
-            ->limit(4)
-            ->get();
-
-        return view('books.show', compact('book', 'relatedBooks', 'gutenbergData'));
+        return view('books.show', compact('book', 'relatedBooks'));
     }
+
     /**
      * Display the book's content for reading.
+     * Downloads content in the background to prevent timeouts.
      */
-    public function read(Book $book)
+    public function read($id)
     {
-        if ($book->epub_url) {
-            return view('books.read_epub', [
-                'book' => $book,
-                'epubUrl' => $book->epub_url,
-            ]);
+        // Make sure the book metadata is in our database.
+        Book::firstOrCreate(
+            ['id' => $id],
+            $this->gutendexService->getBookById($id)
+        );
+
+        $book = Book::findOrFail($id);
+
+        // If the full text content has not been downloaded yet...
+        if (empty($book->text_content)) {
+            // ...dispatch a background job to download it from the Gutenberg API.
+            ProcessBookContent::dispatch($book);
+            // ...and show the user a temporary loading page.
+            return view('books.loading', ['book' => $book]);
         }
 
-        $chapters = [];
-        $bookContent = $book->text_content;
-
-        if (empty($bookContent)) {
-            $chapters[] = [
-                'title' => 'Content Not Available',
-                'content' => '<p>The text for this book is not available in plain-text format.</p>'
-            ];
-        } else {
-            $cleanedContent = $this->extractBookContent($bookContent);
-            $chapters = $this->splitIntoChapters($cleanedContent);
-        }
+        // If content IS ready, process it into chapters and display the reader page.
+        $chapters = $this->splitIntoChapters($this->extractBookContent($book->text_content));
 
         return view('books.read', [
             'book' => $book,
@@ -159,9 +106,8 @@ class BookController extends Controller
         ]);
     }
 
-    /**
-     * Remove Gutenberg headers and footers.
-     */
+    // --- Private Helper Methods for Text Processing ---
+
     private function extractBookContent(string $rawText): string
     {
         $startMarker = '*** START OF THE PROJECT GUTENBERG EBOOK';
@@ -176,9 +122,6 @@ class BookController extends Controller
         return substr($rawText, $startIndex, $endIndex - $startIndex);
     }
 
-    /**
-     * Split book content into chapters.
-     */
     private function splitIntoChapters(string $bookContent): array
     {
         $chapters = [];
@@ -189,7 +132,7 @@ class BookController extends Controller
 
         foreach ($lines as $line) {
             if (preg_match($chapterRegex, trim($line))) {
-                if (!empty($currentChapterLines)) {
+                if (!empty(trim(implode("\n", $currentChapterLines)))) {
                     $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
                 }
                 $currentChapterTitle = trim($line);
@@ -199,10 +142,11 @@ class BookController extends Controller
             }
         }
 
-        if (!empty($currentChapterLines)) {
+        if (!empty(trim(implode("\n", $currentChapterLines)))) {
             $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
         }
 
+        // Fallback for books with no clear chapter markers
         if (empty($chapters)) {
             $chapters[] = ['title' => 'Full Text', 'content' => $this->formatChapterContent(explode("\n", $bookContent))];
         }
@@ -210,41 +154,13 @@ class BookController extends Controller
         return $chapters;
     }
 
-    /**
-     * Format chapter content to HTML with advanced typography using GFM.
-     */
     private function formatChapterContent(array $lines): string
     {
-        $content = implode("\n", $lines);
-        $content = trim($content);
+        $content = trim(implode("\n", $lines));
+        $html = nl2br(e($content)); // Convert newlines to <br> and escape HTML
 
-        // Handle scene breaks (* * *)
-        $content = preg_replace('/^\s*(\*\s*){3,}\s*$/m', '<hr class="my-8 border-gray-400 border-dashed">', $content);
+        // You can add more advanced formatting here if needed later
 
-        // Configure Markdown environment for GitHub Flavored Markdown
-        $environment = new Environment([
-            'default_attributes' => [
-                \League\CommonMark\Extension\CommonMark\Node\Block\Heading::class => ['class' => 'text-2xl font-bold mt-8 mb-4'],
-                \League\CommonMark\Node\Block\Paragraph::class => ['class' => 'mb-4 leading-relaxed'],
-                \League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote::class => ['class' => 'border-l-4 border-gray-500 pl-4 italic my-4'],
-                \League\CommonMark\Extension\CommonMark\Node\Block\ListItem::class => ['class' => 'mb-2'],
-                \League\CommonMark\Extension\CommonMark\Node\Inline\Emphasis::class => ['class' => 'italic'],
-                \League\CommonMark\Extension\CommonMark\Node\Inline\Strong::class => ['class' => 'font-bold'],
-            ],
-            'allow_unsafe_links' => false,
-            'gfm' => [
-                'strikethrough_class' => 'line-through',
-            ],
-        ]);
-
-        $environment->addExtension(new \League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension());
-        $environment->addExtension(new DefaultAttributesExtension());
-
-        // Use the GithubFlavoredMarkdownConverter which includes smart punctuation
-        $converter = new GithubFlavoredMarkdownConverter([], $environment);
-
-        $html = $converter->convert($content);
-
-        return mb_convert_encoding((string) $html, 'UTF-8', 'UTF-8');
+        return $html;
     }
 }
