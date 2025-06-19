@@ -22,7 +22,7 @@ class BookSeeder extends Seeder
     public function run(): void
     {
         // --- CONFIGURATION ---
-        $pagesToSeed = 5; // Fetch more books to ensure good distribution
+        $pagesToSeed = 10; // Fetch more books to ensure good distribution
         $featuredSlugs = ['horror', 'mystery', 'fantasy', 'romance'];
 
         // 1. Get the specific categories we want to feature

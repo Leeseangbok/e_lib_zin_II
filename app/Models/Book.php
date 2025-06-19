@@ -45,14 +45,14 @@ class Book extends Model
     /**
      * Get the full URL for the book's cover image.
      */
-    public function getCoverImageUrlAttribute()
-    {
-        if ($this->cover_image_path) {
-            return Storage::url($this->cover_image_path);
-        }
-        // Return a default image if no cover is set
-        return 'https://via.placeholder.com/150';
-    }
+    // public function getCoverImageUrlAttribute()
+    // {
+    //     if ($this->cover_image_path) {
+    //         return Storage::url($this->cover_image_path);
+    //     }
+    //     // Return a default image if no cover is set
+    //     return 'https://via.placeholder.com/150';
+    // }
 
     /**
      * Get the full URL for the book's file.

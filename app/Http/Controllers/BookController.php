@@ -18,10 +18,19 @@ class BookController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
- public function index(Request $request)
+    public function index(Request $request)
     {
         $query = Book::query();
-        $categoryName = null; // <-- MODIFIED: Initialize $categoryName to null
+        $categoryName = null;
+
+        // NEW: Handle search query
+        if ($request->has('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('author', 'like', "%{$searchTerm}%");
+            });
+        }
 
         // Check if a category filter is present in the request
         if ($request->has('category')) {
@@ -34,9 +43,9 @@ class BookController extends Controller
         }
 
         // Get the paginated list of books
-        $books = $query->latest()->paginate(12);
+        $books = $query->latest()->paginate(25);
 
-        // Pass the books and the category name (which is now always defined) to the view
+        // Pass the books and the category name to the view
         return view('books.index', compact('books', 'categoryName'));
     }
 
@@ -58,13 +67,32 @@ class BookController extends Controller
 
             // Clean and set the publication date
             if (empty($book->publication_date) && isset($volumeInfo['publishedDate'])) {
-                // Remove any non-numeric or non-dash characters to prevent parsing errors
                 $cleanedDate = preg_replace('/[^\d\-]/', '', $volumeInfo['publishedDate']);
                 $book->publication_date = $cleanedDate;
             }
 
             if (empty($book->publisher) && isset($volumeInfo['publisher'])) {
                 $book->publisher = $volumeInfo['publisher'];
+            }
+
+            if (empty($book->language) && isset($volumeInfo['language'])) {
+                $book->language = $volumeInfo['language'];
+            }
+
+            if (empty($book->page_count) && isset($volumeInfo['pageCount'])) {
+                $book->page_count = $volumeInfo['pageCount'];
+            }
+
+            if (empty($book->isbn) && isset($volumeInfo['industryIdentifiers'])) {
+                foreach ($volumeInfo['industryIdentifiers'] as $identifier) {
+                    if ($identifier['type'] === 'ISBN_13') {
+                        $book->isbn = $identifier['identifier'];
+                        break;
+                    }
+                    if ($identifier['type'] === 'ISBN_10') {
+                        $book->isbn = $identifier['identifier'];
+                    }
+                }
             }
         }
 
@@ -76,6 +104,10 @@ class BookController extends Controller
             $gutenbergBook = $gutendexResponse->json('results')[0];
             $gutenbergData['subjects'] = $gutenbergBook['subjects'] ?? [];
             $gutenbergData['bookshelves'] = $gutenbergBook['bookshelves'] ?? [];
+
+            if (empty($book->language) && !empty($gutenbergBook['languages'])) {
+                $book->language = $gutenbergBook['languages'][0] ?? null;
+            }
         }
 
         // --- Eager Loading and Related Books ---

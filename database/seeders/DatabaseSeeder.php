@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Fetching book content...');
         // Now, call the command to fetch the actual content for the books
         Artisan::call('book:fetch-content', [
-            '--limit' => 50 // You can adjust the limit as needed
+            '--limit' => 500 // You can adjust the limit as needed
         ]);
         $this->command->info('Book content fetched successfully.');
         // -------------------------
