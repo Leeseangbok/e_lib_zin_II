@@ -23,49 +23,53 @@ class BookController extends Controller
     {
         $page = $request->input('page', 1);
         $search = $request->input('search');
-        $bookData = $this->gutendexService->getBooks($page, $search);
+        $topic = $request->input('topic'); // Get topic from request
+
+        $bookData = $this->gutendexService->getBooks($page, $search, $topic); // Pass topic to service
 
         return view('books.index', [
             'books' => $bookData,
-            'categoryName' => $search ? 'Search Results' : 'Browse All Books'
+            'categoryName' => $topic ? ucfirst($topic) : ($search ? 'Search Results' : 'Browse All Books')
         ]);
     }
 
     /**
      * Display the specified book with its reviews and favorite status.
      */
-    public function show($id)
+   public function show($id)
     {
+        // 1. Fetch book data from the API
         $book = $this->gutendexService->getBookById($id);
 
         if (!$book) {
-            abort(404);
+            abort(404, 'Book not found.');
         }
 
-        // --- START OF CORRECTIONS ---
+        // 2. Check favorite status directly against the pivot table
+        $isFavorite = false;
+        if (Auth::check()) {
+            // This is the corrected logic: Query the pivot table directly.
+            $isFavorite = FavoriteBook::where('user_id', Auth::id())
+                                      ->where('gutenberg_book_id', $id)
+                                      ->exists();
+        }
 
-        // 1. Check if the book is in the user's favorites
-        $isFavorite = Auth::check()
-            ? Auth::user()->favoriteBooks()->where('gutenberg_book_id', $id)->exists()
-            : false;
-
-        // 2. Fetch reviews for this book from your database
+        // 3. Fetch reviews for this book from your database
         $reviews = Review::where('gutenberg_book_id', $id)
-                         ->with('user') // Eager load the user to prevent N+1 queries
-                         ->latest()     // Order by newest first
+                         ->with('user') // Eager load user data
+                         ->latest()     // Show newest first
                          ->get();
 
-        // --- END OF CORRECTIONS ---
-
-        // Fetch related books
+        // 4. Fetch related books (no changes here)
         $authorName = $book['authors'][0]['name'] ?? null;
         $relatedBooksData = $authorName ? $this->gutendexService->getBooks(1, $authorName) : ['results' => []];
         $relatedBooks = array_filter($relatedBooksData['results'], fn($related) => $related['id'] != $id);
         $relatedBooks = array_slice($relatedBooks, 0, 5);
 
-        // Pass all required data to the view
+        // 5. Pass all data to the view
         return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews'));
     }
+
 
     public function toggleFavorite(Request $request)
     {
@@ -126,15 +130,15 @@ class BookController extends Controller
             // A more robust fallback for books missing the START marker
             $altStartMarker = '*** START OF THIS PROJECT GUTENBERG EBOOK';
             $startIndex = strpos($rawText, $altStartMarker);
-             if ($startIndex !== false) {
+            if ($startIndex !== false) {
                 $startIndex = strpos($rawText, "\n", $startIndex) ?: $startIndex;
             } else {
-                 $startIndex = 0;
+                $startIndex = 0;
             }
         }
 
         $endIndex = strrpos($rawText, $endMarker);
-         if ($endIndex === false) {
+        if ($endIndex === false) {
             $endIndex = strrpos($rawText, '*** END OF THE PROJECT GUTENBERG EBOOK');
         }
 

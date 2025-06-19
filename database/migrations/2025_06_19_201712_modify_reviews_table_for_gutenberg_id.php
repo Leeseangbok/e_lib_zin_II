@@ -11,9 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
-            // Remove the old foreign key if it exists
-            // $table->dropForeign(['book_id']);
-            // $table->dropColumn('book_id');
+
 
             // Add the new column for the Gutenberg book ID
             $table->unsignedBigInteger('gutenberg_book_id')->after('user_id');

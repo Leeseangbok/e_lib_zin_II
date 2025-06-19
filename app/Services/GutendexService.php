@@ -9,22 +9,24 @@ class GutendexService
 {
     protected $baseUrl = 'https://gutendex.com/books';
 
-    public function getBooks(int $page = 1, ?string $search = null)
-    {
-        $query = ['page' => $page];
-        if ($search) {
-            $query['search'] = urlencode($search); // Important: URL-encode search terms
-        }
-
-        $response = Http::get($this->baseUrl, $query);
-
-        // If the request failed, return a default "empty" response.
-        if (!$response->successful()) {
-            return ['count' => 0, 'next' => null, 'previous' => null, 'results' => []];
-        }
-
-        return $response->json();
+   public function getBooks(int $page = 1, ?string $search = null, ?string $topic = null) // Add $topic
+{
+    $query = ['page' => $page];
+    if ($search) {
+        $query['search'] = urlencode($search);
     }
+    if ($topic) { // Add this block
+        $query['topic'] = urlencode($topic);
+    }
+
+    $response = Http::get($this->baseUrl, $query);
+
+    if (!$response->successful()) {
+        return ['count' => 0, 'next' => null, 'previous' => null, 'results' => []];
+    }
+
+    return $response->json();
+}
     /**
      * Fetches a single book by its Gutenberg ID and maps the API data
      * to the structure of our local Book model.

@@ -11,8 +11,8 @@
                     $bgColor = $category->bg_color ?? 'bg-gray-800';
                     $hoverBgColor = $category->hover_bg_color ?? 'hover:bg-indigo-700';
                 @endphp
-                <a href="{{ route('books.index', ['category' => $category->slug]) }}"
-                   class="flex flex-col items-center justify-center p-2 sm:p-3 min-h-[70px] {{ $bgColor }} {{ $hoverBgColor }} border border-gray-700 rounded-lg transition-all duration-200 shadow hover:scale-105 group">
+                <a href="{{ route('books.index', ['topic' => $category->slug]) }}"
+                    class="flex flex-col items-center justify-center p-2 sm:p-3 min-h-[70px] {{ $bgColor }} {{ $hoverBgColor }} border border-gray-700 rounded-lg transition-all duration-200 shadow hover:scale-105 group">
                     <h3 class="font-semibold text-xs sm:text-sm text-white truncate">{{ $category->name }}</h3>
                 </a>
             @endforeach

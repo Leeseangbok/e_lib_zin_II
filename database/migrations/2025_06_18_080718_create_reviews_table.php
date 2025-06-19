@@ -6,16 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // database/migrations/xxxx_xx_xx_xxxxxx_create_reviews_table.php
     public function up(): void
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->integer('book_id'); // Not a foreign key
+            $table->unsignedBigInteger('gutenberg_book_id');
             $table->unsignedTinyInteger('rating');
-            $table->text('content');
+            // This is the correct column name
+            $table->text('review_text');
             $table->timestamps();
-            $table->unique(['user_id', 'book_id']); // A user can only review a book once
         });
     }
 

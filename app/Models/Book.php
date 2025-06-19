@@ -64,6 +64,6 @@ class Book extends Model
 
     public function favoritedBy()
     {
-        return $this->belongsToMany(User::class, 'book_user');
+        return $this->belongsToMany(User::class, 'favorite_books', 'gutenberg_book_id', 'user_id');
     }
 }

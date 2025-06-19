@@ -17,21 +17,25 @@ class ReviewController extends Controller
      * @param  \App\Models\Book  $book
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request, int $gutenbergBookId)
+    // app/Http/Controllers/ReviewController.php
+    public function store(Request $request)
     {
-        $request->validate([
+        // 1. Change validation key from 'comment' to 'review_text'
+        $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string',
+            'review_text' => 'required|string|max:1000', // Changed
+            'gutenberg_book_id' => 'required|integer',
         ]);
 
         Review::create([
             'user_id' => Auth::id(),
-            'gutenberg_book_id' => $gutenbergBookId,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
+            'gutenberg_book_id' => $validated['gutenberg_book_id'],
+            'rating' => $validated['rating'],
+            // 2. Change key in create() from 'comment' to 'review_text'
+            'review_text' => $validated['review_text'], // Changed
         ]);
 
-        return back()->with('success', 'Review submitted successfully.');
+        return back()->with('success', 'Your review has been submitted!');
     }
 
     /**

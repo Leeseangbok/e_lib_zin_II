@@ -15,41 +15,50 @@ class HomeController extends Controller
         $this->gutendexService = $gutendexService;
     }
 
-    /**
-     * Show the application dashboard/welcome page.
-     * This now fetches curated lists of books directly from the Gutendex API.
-     */
     public function index()
     {
-        // Define the topics for your featured collections.
-        // These are just search terms for the Gutendex API.
-        $featuredTopics = [
-            'Adventure',
-            'Mystery',
-            'Science Fiction',
-            'Fantasy',
-            'Horror',
-            'Romance',
-        ];
-
-        $collections = [];
-
-        // Use caching to avoid hitting the API on every page load, which is much faster.
-        // Cache for 2 hours (120 minutes).
-        $collections = Cache::remember('homepage_collections', 120, function () use ($featuredTopics) {
-            $fetchedCollections = [];
-
-            // Fetch a general "Popular" list first.
-            $fetchedCollections['Popular'] = $this->gutendexService->getBooks(1, null, 12)['results'] ?? [];
-
-            // Fetch books for each of the featured topics.
-            foreach ($featuredTopics as $topic) {
-                // We'll fetch 6 books for each topic.
-                $fetchedCollections[$topic] = $this->gutendexService->getBooks(1, strtolower($topic), 6)['results'] ?? [];
-            }
-            return $fetchedCollections;
+        // Existing code for homePageCollections
+        $homePageCollections = Cache::remember('homepage_collections', now()->addHours(6), function () {
+            return [
+                [
+                    'name' => 'Popular This Week',
+                    'books' => $this->gutendexService->getBooks(1, 'popular')['results'] ?? []
+                ],
+                [
+                    'name' => 'New Releases',
+                    'books' => $this->gutendexService->getBooks(1, 'new')['results'] ?? []
+                ],
+                [
+                    'name' => 'All-Time Classics',
+                    'books' => $this->gutendexService->getBooks(1, 'classics')['results'] ?? []
+                ]
+            ];
         });
 
-        return view('welcome', compact('collections'));
+        // --- New code for category carousel ---
+        $categories = [
+            ['name' => 'Fiction', 'slug' => 'fiction'],
+            ['name' => 'Fantasy', 'slug' => 'fantasy'],
+            ['name' => 'Adventure', 'slug' => 'adventure'],
+            ['name' => 'Horror', 'slug' => 'horror'],
+            ['name' => 'Science Fiction', 'slug' => 'science-fiction'],
+        ];
+
+        $categoryBooks = [];
+        foreach ($categories as $category) {
+            $cacheKey = 'category_books_' . $category['slug'];
+            // Cache for 6 hours
+            $categoryBooks[$category['slug']] = Cache::remember($cacheKey, now()->addHours(6), function () use ($category) {
+                // Fetch the first page of books for the category
+                return $this->gutendexService->getBooks(1, null, $category['slug'])['results'] ?? [];
+            });
+        }
+        // --- End of new code ---
+
+        return view('welcome', [
+            'homePageCollections' => $homePageCollections,
+            'categories' => $categories, // Pass categories to the view
+            'categoryBooks' => $categoryBooks, // Pass category books to the view
+        ]);
     }
 }
