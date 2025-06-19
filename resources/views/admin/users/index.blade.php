@@ -1,5 +1,5 @@
 {{-- resources/views/admin/users/index.blade.php --}}
-<x-app-layout>
+<x-admin-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('User Management') }}
@@ -41,4 +41,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-admin-layout>

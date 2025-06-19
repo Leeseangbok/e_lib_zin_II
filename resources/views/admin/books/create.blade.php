@@ -1,5 +1,5 @@
 {{-- resources/views/admin/books/create.blade.php --}}
-<x-app-layout>
+<x-admin-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Add New Book') }}
@@ -16,4 +16,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-admin-layout>

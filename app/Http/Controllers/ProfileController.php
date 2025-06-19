@@ -12,14 +12,9 @@ use App\Models\User;
 
 class ProfileController extends Controller
 {
-     public function show(User $user): View
+    public function show(): View
     {
-        // ** SECURITY CHECK **
-        // Ensure the logged-in user can only view their own profile page.
-        if (Auth::id() !== $user->id) {
-            abort(403, 'Unauthorized action.');
-        }
-
+        $user = Auth::user();
         // Pass the user's favorite books to the view
         $favoriteBooks = $user->favoriteBooks()->orderBy('title')->paginate(8);
 

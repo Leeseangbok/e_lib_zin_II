@@ -37,8 +37,8 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        // If not admin, redirect to the regular user home page.
-        return redirect()->route('home', ['user' => $user->name]);
+        // If not admin, redirect to the regular user dashboard.
+        return redirect()->route('dashboard');
     }
 
     /**

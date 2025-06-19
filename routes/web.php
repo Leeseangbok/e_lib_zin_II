@@ -14,9 +14,7 @@ use App\Http\Controllers\LibraryController;
 Route::get('/', [HomeController::class, 'index'])->name('welcome');
 
 // --- USER-FACING ROUTES ---
-// This is the new personalized home page for logged-in users.
-Route::get('/{user:name}/home', [ProfileController::class, 'show'])
-    ->middleware(['auth', 'verified'])->name('home');
+Route::get('/dashboard', [ProfileController::class, 'show'])->middleware(['auth', 'verified'])->name('dashboard');
 
 // Book and Category Browse routes are public.
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
