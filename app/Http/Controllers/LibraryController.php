@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use App\Models\FavoriteBook;
 
 class LibraryController extends Controller
 {
@@ -28,9 +29,7 @@ class LibraryController extends Controller
 
         // 1. Get the IDs of the user's favorite books from the database.
         // We sort by 'created_at' to show the most recently added books first by default.
-        $favoriteBookIds = $user->favoriteBooks()
-                                ->latest('favorite_books.created_at')
-                                ->pluck('gutenberg_book_id');
+        $favoriteBookIds = FavoriteBook::where('user_id', $user->id)->pluck('gutenberg_book_id');
 
         // 2. Fetch the full book details for each ID from the Gutendex API.
         $books = [];

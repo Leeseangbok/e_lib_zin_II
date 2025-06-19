@@ -16,7 +16,7 @@ class Review extends Model
         'user_id',
         'gutenberg_book_id',
         'rating',
-        'comment',
+        'review_text', // <-- CORRECTED
     ];
 
     public function user(): BelongsTo

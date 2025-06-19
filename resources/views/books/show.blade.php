@@ -147,13 +147,14 @@
                     <div id="reviews" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
                         <h3
                             class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
-                            Community Reviews ({{ $reviews->count() }})
+                               Community Reviews ({{ $reviews->count() }})
                         </h3>
 
                         @auth
-                            <form action="{{ route('reviews.store', ['gutenbergBookId' => $book['id']]) }}" method="POST"
+                            <form action="{{ route('reviews.store') }}" method="POST"
                                 class="bg-gray-700 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
                                 @csrf
+                                <input type="hidden" name="gutenberg_book_id" value="{{ $book['id'] }}">
                                 <h4 class="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-4">Leave a Review</h4>
                                 <div class="space-y-2 sm:space-y-4">
                                     <div>
@@ -213,7 +214,7 @@
                                         <x-star-rating :rating="$review->rating" />
                                     </div>
                                     <p class="text-gray-300 leading-relaxed text-xs sm:text-base">
-                                        {{ $review->comment }}</p>
+                                        {{ $review->review_text }}</p>
                                 </div>
                             @empty
                                 <p class="text-gray-500 italic text-xs sm:text-base">This book has no reviews yet.</p>
@@ -229,7 +230,7 @@
                         @endif
 
                     </div> {{-- End of reviews div --}}
-                    {{-- The extra @endif was here. It has been removed. --}}
+
                 </div>
             </div>
         </div>

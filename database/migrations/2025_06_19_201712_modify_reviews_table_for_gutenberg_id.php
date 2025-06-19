@@ -11,9 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
-
-
-            // Add the new column for the Gutenberg book ID
+            // This is trying to add a column that already exists
             $table->unsignedBigInteger('gutenberg_book_id')->after('user_id');
         });
     }
@@ -22,9 +20,6 @@ return new class extends Migration
     {
         Schema::table('reviews', function (Blueprint $table) {
             $table->dropColumn('gutenberg_book_id');
-
-            // If you want to revert, you would add the old book_id column back
-            // $table->foreignId('book_id')->constrained()->onDelete('cascade');
         });
     }
 };

@@ -17,12 +17,12 @@
                                     <a href="{{ route('books.show', $book) }}" class="group flex flex-col h-full">
 
                                         <img class="h-48 sm:h-56 md:h-64 w-full object-cover rounded-t-sm transition-transform duration-300 group-hover:scale-105"
-                                            src="{{ $book->cover_image_url ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
-                                            alt="Cover of {{ $book->title }}">
+                                            src="{{ $book['cover_image_url'] ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
+                                            alt="Cover of {{ $book['title'] }}">
 
                                         <div class="p-4 text-white flex flex-col flex-grow">
-                                            <h3 class="font-bold text-lg truncate">{{ $book->title }}</h3>
-                                            <p class="text-sm text-gray-300">{{ $book->author }}</p>
+                                            <h3 class="font-bold text-lg truncate">{{ $book['title'] }}</h3>
+                                            <p class="text-sm text-gray-300">{{ $book['author'] }}</p>
                                         </div>
                                     </a>
                                 </div>
