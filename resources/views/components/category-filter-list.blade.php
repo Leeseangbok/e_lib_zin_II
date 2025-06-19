@@ -6,9 +6,15 @@
     <div class="mt-8 bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach ($categories as $category)
-                {{-- Each link now goes to the main book index, passing the category slug as a query parameter --}}
-                <a href="{{ route('books.index', ['category' => $category->slug]) }}" class="block p-4 text-center bg-gray-50 hover:bg-indigo-100 border border-gray-200 rounded-lg transition">
-                    <h3 class="font-semibold text-lg text-indigo-700">{{ $category->name }}</h3>
+                @php
+                    // Assign a color based on category or use a default if not set
+                    $color = $category->color ?? 'indigo-700';
+                    $bgColor = $category->bg_color ?? 'bg-gray-900';
+                    $hoverBgColor = $category->hover_bg_color ?? 'hover:bg-indigo-100';
+                @endphp
+                <a href="{{ route('books.index', ['category' => $category->slug]) }}"
+                   class="block p-4 text-center {{ $bgColor }} {{ $hoverBgColor }} border border-gray-200 rounded-lg transition">
+                    <h3 class="font-semibold text-lg text-{{ $color }}">{{ $category->name }}</h3>
                 </a>
             @endforeach
         </div>
