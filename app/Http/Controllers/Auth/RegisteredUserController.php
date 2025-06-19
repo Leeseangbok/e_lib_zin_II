@@ -46,6 +46,6 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         // MODIFIED: Redirect to the named 'home' route with the user's name
-        return redirect()->route('home', ['user' => $user->name]);
+        return redirect()->route('welcome', ['user' => $user->name]);
     }
 }

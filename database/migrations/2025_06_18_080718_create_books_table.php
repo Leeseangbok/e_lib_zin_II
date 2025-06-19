@@ -6,29 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('books', function (Blueprint $table) {
-            $table->id();
+            $table->id(); // Corresponds to Gutenberg ID
             $table->string('title');
-            $table->string('author');
-            $table->text('description');
-            $table->string('isbn')->unique()->nullable(); // Add ISBN column
-            $table->string('language')->default('English'); // Add language column
-            $table->year('published_year');
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            $table->string('cover_image_path')->nullable();
-            $table->string('book_file_path')->nullable();
+            $table->string('author')->nullable();
+            $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
+            $table->text('description')->nullable();
+            $table->string('cover_image_url')->nullable();
+            $table->text('text_url')->nullable();
+            $table->string('language')->nullable();
+            $table->date('publication_date')->nullable();
+            $table->string('isbn')->nullable()->unique();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('books');

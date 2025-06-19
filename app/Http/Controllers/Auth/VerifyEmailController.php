@@ -24,6 +24,6 @@ class VerifyEmailController extends Controller
         }
 
         // MODIFIED: Redirect to the dynamic 'home' route
-        return redirect()->route('home', ['user' => $request->user()->name, 'verified' => 1]);
+        return redirect()->route('welcome', ['user' => $request->user()->name, 'verified' => 1]);
     }
 }

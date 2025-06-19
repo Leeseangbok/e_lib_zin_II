@@ -19,8 +19,8 @@ class Book extends Model
         'language',
         'published_year',
         'category_id',
-        'cover_image_path',
-        'book_file_path',
+        'cover_image_url',
+        'text_url',
     ];
 
     /**
@@ -29,6 +29,17 @@ class Book extends Model
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'book_user');
     }
 
     /**
@@ -48,6 +59,6 @@ class Book extends Model
      */
     public function getBookFileUrlAttribute()
     {
-        return $this->book_file_path ? Storage::url($this->book_file_path) : null;
+        return $this->text_url ? Storage::url($this->text_url) : null;
     }
 }

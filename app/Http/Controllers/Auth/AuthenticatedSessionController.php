@@ -38,7 +38,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         // If not admin, redirect to the regular user dashboard.
-        return redirect()->route('dashboard');
+        return redirect()->route('welcome');
     }
 
     /**
@@ -52,6 +52,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

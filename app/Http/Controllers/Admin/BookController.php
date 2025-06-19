@@ -49,21 +49,20 @@ class BookController extends Controller
             'author' => 'required|string|max:255',
             'description' => 'required|string',
             'isbn' => 'required|string|unique:books,isbn',
-            'language' => 'required|string|max:100',
             'published_year' => 'required|integer|min:1000|max:' . date('Y'),
             'category_id' => 'required|exists:categories,id',
-            'cover_image' => 'nullable|image|max:2048',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'book_file' => 'nullable|file|mimes:pdf',
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('cover_image')) {
-            $data['cover_image_path'] = $request->file('cover_image')->store('covers', 'public');
+            $data['cover_image_url'] = $request->file('cover_image')->store('covers', 'public');
         }
 
         if ($request->hasFile('book_file')) {
-            $data['book_file_path'] = $request->file('book_file')->store('books', 'public');
+            $data['text_url'] = $request->file('book_file')->store('books', 'public');
         }
 
         Book::create($data);
@@ -90,27 +89,28 @@ class BookController extends Controller
             'author' => 'required|string|max:255',
             'description' => 'required|string',
             'isbn' => 'required|string|unique:books,isbn,' . $book->id,
-            'language' => 'required|string|max:100',
             'published_year' => 'required|integer|min:1000|max:' . date('Y'),
             'category_id' => 'required|exists:categories,id',
-            'cover_image' => 'nullable|image|max:2048',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'book_file' => 'nullable|file|mimes:pdf',
         ]);
 
         $data = $request->except(['_token', '_method']);
 
         if ($request->hasFile('cover_image')) {
-            if ($book->cover_image_path) {
-                Storage::disk('public')->delete($book->cover_image_path);
+            // Delete old cover if it exists
+            if ($book->cover_image_url) {
+                Storage::disk('public')->delete($book->cover_image_url);
             }
-            $data['cover_image_path'] = $request->file('cover_image')->store('covers', 'public');
+            $data['cover_image_url'] = $request->file('cover_image')->store('covers', 'public');
         }
 
         if ($request->hasFile('book_file')) {
-            if ($book->book_file_path) {
-                Storage::disk('public')->delete($book->book_file_path);
+            // Delete old book file if it exists
+            if ($book->text_url) {
+                Storage::disk('public')->delete($book->text_url);
             }
-            $data['book_file_path'] = $request->file('book_file')->store('books', 'public');
+            $data['text_url'] = $request->file('book_file')->store('books', 'public');
         }
 
         $book->update($data);
@@ -124,11 +124,11 @@ class BookController extends Controller
     public function destroy(Book $book)
     {
         // Delete associated files from storage
-        if ($book->cover_image_path) {
-            Storage::disk('public')->delete($book->cover_image_path);
+        if ($book->cover_image_url) {
+            Storage::disk('public')->delete($book->cover_image_url);
         }
-        if ($book->book_file_path) {
-            Storage::disk('public')->delete($book->book_file_path);
+        if ($book->text_url) {
+            Storage::disk('public')->delete($book->text_url);
         }
 
         $book->delete();
