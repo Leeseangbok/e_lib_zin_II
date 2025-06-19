@@ -2,14 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use Illuminate\Http\Request;
 use App\Services\GutendexService;
-use App\Jobs\ProcessBookContent;
-use Illuminate\Pagination\LengthAwarePaginator;
-use League\CommonMark\Environment\Environment;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
-use League\CommonMark\GithubFlavoredMarkdownConverter;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http; // Import Http facade
+use Illuminate\Support\Str;
 
 class BookController extends Controller
 {
@@ -21,111 +17,99 @@ class BookController extends Controller
     }
 
     /**
-     * Display a listing of the resource from the API.
+     * Display a listing of books from the API. (Unchanged)
      */
     public function index(Request $request)
     {
         $page = $request->input('page', 1);
         $search = $request->input('search');
-
-        // Fetch book list directly from the Gutenberg API
         $bookData = $this->gutendexService->getBooks($page, $search);
 
-        $totalResults = $bookData['count'] ?? 0;
-        $perPage = 32; // Gutendex API returns 32 items per page
-        $items = $bookData['results'] ?? [];
-
-        // Create a Paginator so your Blade views can use ->hasPages() and ->links()
-        $books = new LengthAwarePaginator(
-            $items,
-            $totalResults,
-            $perPage,
-            $page,
-            [
-                'path' => $request->url(),
-                'query' => $request->query(),
-            ]
-        );
-
         return view('books.index', [
-            'books' => $books,
+            'books' => $bookData, // Pass the whole response
             'categoryName' => $search ? 'Search Results' : 'Browse All Books'
         ]);
     }
 
     /**
-     * Display the specified resource.
-     * Fetches from API on first visit, then loads from local DB.
+     * Display the specified book fetched directly from the API.
      */
     public function show($id)
     {
-        // On first visit, fetch from API and create the record in our database.
-        Book::firstOrCreate(
-            ['id' => $id],
-            $this->gutendexService->getBookById($id)
-        );
+        // Fetch the main book's data directly from the API.
+        $book = $this->gutendexService->getBookById($id);
 
-        // Now, load the book from our local database. This is faster.
-        $book = Book::findOrFail($id);
+        // Fetch related books based on the author's name.
+        $authorName = $book['authors'][0]['name'] ?? null;
+        $relatedBooksData = $authorName ? $this->gutendexService->getBooks(1, $authorName) : ['results' => []];
 
-        // Fetch related books from API based on the author.
-        $relatedBooksData = $this->gutendexService->getBooks(1, $book->author);
-        $relatedBooks = array_slice($relatedBooksData['results'] ?? [], 0, 5);
+        // Filter out the current book from the related list and take 5
+        $relatedBooks = array_filter($relatedBooksData['results'], function($related) use ($id) {
+            return $related['id'] != $id;
+        });
+        $relatedBooks = array_slice($relatedBooks, 0, 5);
+
 
         return view('books.show', compact('book', 'relatedBooks'));
     }
 
     /**
-     * Display the book's content for reading.
-     * Downloads content in the background to prevent timeouts.
+     * Display the book's content for reading. Fetches content on-the-fly.
      */
-    public function read($id)
-    {
-        // Make sure the book metadata is in our database.
-        Book::firstOrCreate(
-            ['id' => $id],
-            $this->gutendexService->getBookById($id)
-        );
+public function read($id)
+{
+    // 1. Get book metadata (this is fast and can also be cached)
+    $book = $this->gutendexService->getBookById($id);
+    $textContentUrl = $book['text_url'];
 
-        $book = Book::findOrFail($id);
-
-        // If the full text content has not been downloaded yet...
-        if (empty($book->text_content)) {
-            // ...dispatch a background job to download it from the Gutenberg API.
-            ProcessBookContent::dispatch($book);
-            // ...and show the user a temporary loading page.
-            return view('books.loading', ['book' => $book]);
-        }
-
-        // If content IS ready, process it into chapters and display the reader page.
-        $chapters = $this->splitIntoChapters($this->extractBookContent($book->text_content));
-
-        return view('books.read', [
-            'book' => $book,
-            'chapters' => $chapters,
-        ]);
+    if (!$textContentUrl) {
+        abort(404, 'No readable text version found for this book.');
     }
 
-    // --- Private Helper Methods for Text Processing ---
+    // 2. Cache the book content to avoid re-downloading
+    // The cache key is unique to the book's ID. Cache for 1 day (1440 minutes).
+    $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl) {
+        // This closure only runs if the item is NOT in the cache.
+        return Http::get($textContentUrl)->body();
+    });
+
+    // 3. Process the text (now using the cached version)
+    $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
+
+    return view('books.read', [
+        'book' => $book,
+        'chapters' => $chapters,
+    ]);
+}
+    // --- Private Helper Methods for Text Processing (Unchanged) ---
 
     private function extractBookContent(string $rawText): string
     {
         $startMarker = '*** START OF THE PROJECT GUTENBERG EBOOK';
         $endMarker = '*** END OF THE PROJECT GUTENBERG EBOOK';
 
+        // Find the start of the actual content
         $startIndex = strpos($rawText, $startMarker);
-        $startIndex = ($startIndex !== false) ? strpos($rawText, "\n", $startIndex) ?: $startIndex : 0;
+        if ($startIndex !== false) {
+            $startIndex = strpos($rawText, "\n", $startIndex) ?: $startIndex;
+        } else {
+            $startIndex = 0; // Fallback if marker isn't found
+        }
 
-        $endIndex = strpos($rawText, $endMarker);
-        $endIndex = ($endIndex !== false) ? $endIndex : strlen($rawText);
+        // Find the end of the actual content
+        $endIndex = strrpos($rawText, $endMarker); // Use last occurrence
+        if ($endIndex === false) {
+            $endIndex = strlen($rawText); // Fallback
+        }
 
-        return substr($rawText, $startIndex, $endIndex - $startIndex);
+        return trim(substr($rawText, $startIndex, $endIndex - $startIndex));
     }
 
     private function splitIntoChapters(string $bookContent): array
     {
         $chapters = [];
-        $chapterRegex = '/^\s*(chapter|prologue|epilogue|part|section)\s*([IVXLCDM\d]+|[a-zA-Z\s]+)\.?\s*$/im';
+        // Improved regex to catch more chapter formats
+        $chapterRegex = '/^\s*(chapter|prologue|epilogue|part|section|book)\s*([IVXLCDM\d]+|[a-zA-Z\s]+)\.?\s*$/im';
         $lines = explode("\n", $bookContent);
         $currentChapterTitle = 'Introduction';
         $currentChapterLines = [];
@@ -135,18 +119,19 @@ class BookController extends Controller
                 if (!empty(trim(implode("\n", $currentChapterLines)))) {
                     $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
                 }
-                $currentChapterTitle = trim($line);
+                $currentChapterTitle = Str::title(trim($line));
                 $currentChapterLines = [];
             } else {
                 $currentChapterLines[] = $line;
             }
         }
 
+        // Add the last chapter
         if (!empty(trim(implode("\n", $currentChapterLines)))) {
             $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
         }
 
-        // Fallback for books with no clear chapter markers
+        // If no chapters were found, return the whole book as a single chapter
         if (empty($chapters)) {
             $chapters[] = ['title' => 'Full Text', 'content' => $this->formatChapterContent(explode("\n", $bookContent))];
         }
@@ -156,11 +141,16 @@ class BookController extends Controller
 
     private function formatChapterContent(array $lines): string
     {
+        // Wrap paragraphs in <p> tags for better formatting
         $content = trim(implode("\n", $lines));
-        $html = nl2br(e($content)); // Convert newlines to <br> and escape HTML
-
-        // You can add more advanced formatting here if needed later
-
+        $paragraphs = explode("\n\n", $content); // Split by double newline
+        $html = '';
+        foreach ($paragraphs as $p) {
+            $trimmedP = trim($p);
+            if (!empty($trimmedP)) {
+                $html .= '<p>' . nl2br(e($trimmedP)) . '</p>';
+            }
+        }
         return $html;
     }
 }

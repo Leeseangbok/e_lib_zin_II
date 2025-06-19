@@ -4,33 +4,58 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate_Database_Eloquent_Relations_BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class Book extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
+        'id',
         'title',
-        'author',
-        'description',
-        'isbn',
-        'language',
-        'published_year',
-        'category_id',
+        'author', // Note: Storing the primary author's name for simplicity.
+        'authors', // Storing the full author data array.
+        'subjects',
+        'bookshelves',
+        'languages',
+        'copyright_status',
         'cover_image_url',
         'text_url',
+        'downloads',
+        'description', // A generated description.
+        'credits',
+        'release_date',
+        'original_publication'
     ];
 
     /**
-     * Get the category that the book belongs to.
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
      */
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    protected $casts = [
+        'authors' => 'array',
+        'subjects' => 'array',
+        'bookshelves' => 'array',
+        'release_date' => 'date',
+    ];
+
+    /**
+     * We're using the Gutenberg ID as our primary key, so it's not auto-incrementing.
+     */
+    public $incrementing = false;
+    protected $keyType = 'integer';
+
+
+    // Relationships (unchanged)
+    public function category()
     {
         return $this->belongsTo(Category::class);
     }
-
 
     public function reviews()
     {
@@ -40,25 +65,5 @@ class Book extends Model
     public function favoritedBy()
     {
         return $this->belongsToMany(User::class, 'book_user');
-    }
-
-    /**
-     * Get the full URL for the book's cover image.
-     */
-    // public function getCoverImageUrlAttribute()
-    // {
-    //     if ($this->cover_image_path) {
-    //         return Storage::url($this->cover_image_path);
-    //     }
-    //     // Return a default image if no cover is set
-    //     return 'https://via.placeholder.com/150';
-    // }
-
-    /**
-     * Get the full URL for the book's file.
-     */
-    public function getBookFileUrlAttribute()
-    {
-        return $this->text_url ? Storage::url($this->text_url) : null;
     }
 }
