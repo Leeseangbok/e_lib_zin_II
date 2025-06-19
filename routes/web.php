@@ -19,8 +19,6 @@ Route::get('/', [HomeController::class, 'index'])->name('welcome');
 // Book and Category Browse routes are public.
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
 Route::get('/books/{id}', [BookController::class, 'show'])->name('books.show');
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::get('/categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 
 
 // --- AUTHENTICATED USER ACTIONS ---
@@ -31,7 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Review and Library routes
-    Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/books/favorite/toggle', [BookController::class, 'toggleFavorite'])->name('books.favorite.toggle');
+    Route::post('/books/{gutenbergBookId}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/library/add/{book}', [LibraryController::class, 'add'])->name('library.add');
     Route::delete('/library/remove/{book}', [LibraryController::class, 'remove'])->name('library.remove');

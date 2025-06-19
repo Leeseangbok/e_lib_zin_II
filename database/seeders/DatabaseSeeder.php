@@ -11,17 +11,16 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $this->command->info('Seeding initial data (Categories, Languages)...');
+        $this->command->info('Seeding initial data (Categories)...');
         $this->call([
             CategorySeeder::class,
-            LanguageSeeder::class,
         ]);
         $this->command->info('Initial data seeded successfully.');
 
 
-        $this->command->info('Seeding book metadata...');
-        $this->call(BookSeeder::class); // This must come after CategorySeeder
-        $this->command->info('Book metadata seeded successfully.');
+        // $this->command->info('Seeding book metadata...');
+        // $this->call(BookSeeder::class); // This must come after CategorySeeder
+        // $this->command->info('Book metadata seeded successfully.');
 
     }
 }

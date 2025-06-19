@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Services\GutendexService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http; // Import Http facade
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use App\Models\FavoriteBook;
+use App\Models\Review; // <-- Import the Review model
 
 class BookController extends Controller
 {
@@ -16,9 +19,6 @@ class BookController extends Controller
         $this->gutendexService = $gutendexService;
     }
 
-    /**
-     * Display a listing of books from the API. (Unchanged)
-     */
     public function index(Request $request)
     {
         $page = $request->input('page', 1);
@@ -26,80 +26,120 @@ class BookController extends Controller
         $bookData = $this->gutendexService->getBooks($page, $search);
 
         return view('books.index', [
-            'books' => $bookData, // Pass the whole response
+            'books' => $bookData,
             'categoryName' => $search ? 'Search Results' : 'Browse All Books'
         ]);
     }
 
     /**
-     * Display the specified book fetched directly from the API.
+     * Display the specified book with its reviews and favorite status.
      */
     public function show($id)
     {
-        // Fetch the main book's data directly from the API.
         $book = $this->gutendexService->getBookById($id);
 
-        // Fetch related books based on the author's name.
+        if (!$book) {
+            abort(404);
+        }
+
+        // --- START OF CORRECTIONS ---
+
+        // 1. Check if the book is in the user's favorites
+        $isFavorite = Auth::check()
+            ? Auth::user()->favoriteBooks()->where('gutenberg_book_id', $id)->exists()
+            : false;
+
+        // 2. Fetch reviews for this book from your database
+        $reviews = Review::where('gutenberg_book_id', $id)
+                         ->with('user') // Eager load the user to prevent N+1 queries
+                         ->latest()     // Order by newest first
+                         ->get();
+
+        // --- END OF CORRECTIONS ---
+
+        // Fetch related books
         $authorName = $book['authors'][0]['name'] ?? null;
         $relatedBooksData = $authorName ? $this->gutendexService->getBooks(1, $authorName) : ['results' => []];
-
-        // Filter out the current book from the related list and take 5
-        $relatedBooks = array_filter($relatedBooksData['results'], function($related) use ($id) {
-            return $related['id'] != $id;
-        });
+        $relatedBooks = array_filter($relatedBooksData['results'], fn($related) => $related['id'] != $id);
         $relatedBooks = array_slice($relatedBooks, 0, 5);
 
-
-        return view('books.show', compact('book', 'relatedBooks'));
+        // Pass all required data to the view
+        return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews'));
     }
 
-    /**
-     * Display the book's content for reading. Fetches content on-the-fly.
-     */
-public function read($id)
-{
-    // 1. Get book metadata (this is fast and can also be cached)
-    $book = $this->gutendexService->getBookById($id);
-    $textContentUrl = $book['text_url'];
+    public function toggleFavorite(Request $request)
+    {
+        $request->validate([
+            'gutenberg_book_id' => 'required|integer',
+        ]);
 
-    if (!$textContentUrl) {
-        abort(404, 'No readable text version found for this book.');
+        $user = Auth::user();
+        $gutenbergBookId = $request->gutenberg_book_id;
+
+        $favorite = $user->favoriteBooks()->where('gutenberg_book_id', $gutenbergBookId)->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            return back()->with('success', 'Book removed from your library.');
+        } else {
+            FavoriteBook::create([
+                'user_id' => $user->id,
+                'gutenberg_book_id' => $gutenbergBookId,
+            ]);
+            return back()->with('success', 'Book added to your library.');
+        }
     }
 
-    // 2. Cache the book content to avoid re-downloading
-    // The cache key is unique to the book's ID. Cache for 1 day (1440 minutes).
-    $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl) {
-        // This closure only runs if the item is NOT in the cache.
-        return Http::get($textContentUrl)->body();
-    });
+    public function read($id)
+    {
+        $book = $this->gutendexService->getBookById($id);
+        $textContentUrl = $book['formats']['text/plain; charset=us-ascii'] ?? $book['formats']['text/plain'] ?? null;
 
-    // 3. Process the text (now using the cached version)
-    $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
+        if (!$textContentUrl) {
+            abort(404, 'No readable text version found for this book.');
+        }
 
-    return view('books.read', [
-        'book' => $book,
-        'chapters' => $chapters,
-    ]);
-}
-    // --- Private Helper Methods for Text Processing (Unchanged) ---
+        $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl) {
+            return Http::get($textContentUrl)->body();
+        });
+
+        $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
+
+        return view('books.read', [
+            'book' => $book,
+            'chapters' => $chapters,
+        ]);
+    }
+
+
+    // --- Private Helper Methods ---
 
     private function extractBookContent(string $rawText): string
     {
         $startMarker = '*** START OF THE PROJECT GUTENBERG EBOOK';
         $endMarker = '*** END OF THE PROJECT GUTENBERG EBOOK';
 
-        // Find the start of the actual content
         $startIndex = strpos($rawText, $startMarker);
         if ($startIndex !== false) {
             $startIndex = strpos($rawText, "\n", $startIndex) ?: $startIndex;
         } else {
-            $startIndex = 0; // Fallback if marker isn't found
+            // A more robust fallback for books missing the START marker
+            $altStartMarker = '*** START OF THIS PROJECT GUTENBERG EBOOK';
+            $startIndex = strpos($rawText, $altStartMarker);
+             if ($startIndex !== false) {
+                $startIndex = strpos($rawText, "\n", $startIndex) ?: $startIndex;
+            } else {
+                 $startIndex = 0;
+            }
         }
 
-        // Find the end of the actual content
-        $endIndex = strrpos($rawText, $endMarker); // Use last occurrence
+        $endIndex = strrpos($rawText, $endMarker);
+         if ($endIndex === false) {
+            $endIndex = strrpos($rawText, '*** END OF THE PROJECT GUTENBERG EBOOK');
+        }
+
         if ($endIndex === false) {
-            $endIndex = strlen($rawText); // Fallback
+            $endIndex = strlen($rawText);
         }
 
         return trim(substr($rawText, $startIndex, $endIndex - $startIndex));
@@ -108,7 +148,6 @@ public function read($id)
     private function splitIntoChapters(string $bookContent): array
     {
         $chapters = [];
-        // Improved regex to catch more chapter formats
         $chapterRegex = '/^\s*(chapter|prologue|epilogue|part|section|book)\s*([IVXLCDM\d]+|[a-zA-Z\s]+)\.?\s*$/im';
         $lines = explode("\n", $bookContent);
         $currentChapterTitle = 'Introduction';
@@ -126,12 +165,10 @@ public function read($id)
             }
         }
 
-        // Add the last chapter
         if (!empty(trim(implode("\n", $currentChapterLines)))) {
             $chapters[] = ['title' => $currentChapterTitle, 'content' => $this->formatChapterContent($currentChapterLines)];
         }
 
-        // If no chapters were found, return the whole book as a single chapter
         if (empty($chapters)) {
             $chapters[] = ['title' => 'Full Text', 'content' => $this->formatChapterContent(explode("\n", $bookContent))];
         }
@@ -141,9 +178,8 @@ public function read($id)
 
     private function formatChapterContent(array $lines): string
     {
-        // Wrap paragraphs in <p> tags for better formatting
         $content = trim(implode("\n", $lines));
-        $paragraphs = explode("\n\n", $content); // Split by double newline
+        $paragraphs = explode("\n\n", $content);
         $html = '';
         foreach ($paragraphs as $p) {
             $trimmedP = trim($p);

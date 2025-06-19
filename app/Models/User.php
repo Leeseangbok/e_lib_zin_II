@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\FavoriteBook;
 
 class User extends Authenticatable
 {
@@ -46,9 +48,10 @@ class User extends Authenticatable
     /**
      * The books that the user has marked as favorites (in their library).
      */
-    public function favoriteBooks()
+
+    public function favoriteBooks(): HasMany
     {
-        return $this->belongsToMany(Book::class, 'book_user');
+        return $this->hasMany(FavoriteBook::class);
     }
 
     /**
