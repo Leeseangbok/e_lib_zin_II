@@ -26,14 +26,14 @@
 
         @if (isset($header))
             <header class="bg-white shadow w-full">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-full sm:max-w-7xl mx-auto py-4 px-2 sm:py-6 sm:px-6 lg:px-8">
                     {{ $header }}
                 </div>
             </header>
         @endif
 
         <main class="flex-1 w-full">
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-full sm:max-w-7xl mx-auto py-4 px-2 sm:py-6 sm:px-6 lg:px-8 overflow-x-auto">
                 {{-- This is where the content from your other pages will be injected --}}
                 {{ $slot }}
             </div>
