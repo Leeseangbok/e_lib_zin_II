@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
+    /**
+     * Store or update a review for a book.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Book  $book
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request, Book $book)
     {
         $request->validate([
@@ -15,15 +22,16 @@ class ReviewController extends Controller
             'content' => 'required|string|min:10',
         ]);
 
-        // Use updateOrCreate to prevent a user from reviewing the same book twice.
         $book->reviews()->updateOrCreate(
-            ['user_id' => Auth::id()],
             [
-                'rating' => $request->rating,
+                'user_id' => Auth::id(),
+            ],
+            [
                 'content' => $request->content,
+                'rating' => $request->rating,
             ]
         );
 
-        return back()->with('success', 'Thank you for your review!');
+        return back()->with('success', 'Your review has been successfully submitted/updated!');
     }
 }

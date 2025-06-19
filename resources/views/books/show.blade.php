@@ -1,5 +1,4 @@
 <x-app-layout>
-    {{-- This slot is for the header in app.blade.php, we'll use it for the breadcrumbs --}}
     <x-slot name="header">
         <div class="flex items-center text-sm">
             <a href="{{ route('welcome') }}" class="text-gray-400 hover:text-white">Home</a>
@@ -94,6 +93,37 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Gutenberg Details Section --}}
+                        @if (!empty($gutenbergData['subjects']) || !empty($gutenbergData['bookshelves']))
+                        <div class="mt-6 border-t border-gray-700 pt-6">
+                            <h3 class="text-2xl font-semibold text-white mb-4">Book Details</h3>
+                            <div class="flex flex-col gap-4 text-gray-300">
+                                @if (!empty($gutenbergData['subjects']))
+                                <div>
+                                    <h4 class="font-semibold text-white mb-2">Subjects:</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (array_slice($gutenbergData['subjects'], 0, 10) as $subject)
+                                            <span class="bg-gray-700 text-sm font-medium px-3 py-1 rounded-full">{{ $subject }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+                                @if (!empty($gutenbergData['bookshelves']))
+                                <div>
+                                    <h4 class="font-semibold text-white mb-2">Bookshelves:</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (array_slice($gutenbergData['bookshelves'], 0, 10) as $bookshelf)
+                                            <span class="bg-gray-700 text-sm font-medium px-3 py-1 rounded-full">{{ $bookshelf }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+                        {{-- End of Gutenberg Details Section --}}
+
                     </div>
 
                     <div id="reviews" class="mt-10 bg-gray-800 p-8 rounded-lg shadow-lg">
@@ -110,7 +140,7 @@
                                         <label for="rating" class="block text-sm font-medium text-gray-300 mb-1">Your
                                             Rating</label>
                                         <select name="rating" id="rating"
-                                            class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                             <option value="" disabled selected>Select a rating...</option>
                                             <option value="5">★★★★★ (Excellent)</option>
                                             <option value="4">★★★★☆ (Great)</option>
@@ -124,7 +154,7 @@
                                             Review</label>
                                         <textarea name="content" id="content" rows="4"
                                             class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            placeholder="Share your thoughts..."></textarea>
+                                            placeholder="Share your thoughts..." required minlength="10"></textarea>
                                     </div>
                                     <div>
                                         <button type="submit"
@@ -143,9 +173,9 @@
                             </div>
                         @endauth
 
-                        <div class="space-y-6">
+                        <div id="reviews-list" class="space-y-6">
                             @forelse($book->reviews as $review)
-                                <div class="border-t border-gray-700 pt-6">
+                                <div class="review-item border-t border-gray-700 pt-6">
                                     <div class="flex items-center">
                                         <div class="font-bold text-white">{{ $review->user->name }}</div>
                                         <div class="ml-auto text-xs text-gray-500">
@@ -160,6 +190,12 @@
                                 <p class="text-gray-500 italic">This book has no reviews yet.</p>
                             @endforelse
                         </div>
+
+                        @if ($book->reviews->count() > 5)
+                            <div class="text-center mt-6">
+                                <button id="see-more-reviews" class="text-indigo-400 font-semibold hover:underline">See More</button>
+                            </div>
+                        @endif
                     </div>
 
                     @if ($relatedBooks->isNotEmpty())
@@ -182,9 +218,37 @@
                                 @endforeach
                             </div>
                         </div>
-                    @endif {{-- <-- THIS IS THE FIX --}}
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+    @if ($book->reviews->count() > 5)
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const reviewsList = document.getElementById('reviews-list');
+            const seeMoreButton = document.getElementById('see-more-reviews');
+            const reviewItems = reviewsList.getElementsByClassName('review-item');
+
+            // Initially hide reviews after the 5th one
+            if (reviewItems.length > 5) {
+                for (let i = 5; i < reviewItems.length; i++) {
+                    reviewItems[i].style.display = 'none';
+                }
+            } else {
+                 seeMoreButton.style.display = 'none';
+            }
+
+
+            seeMoreButton.addEventListener('click', function () {
+                // Show all hidden reviews
+                for (let i = 5; i < reviewItems.length; i++) {
+                    reviewItems[i].style.display = 'block';
+                }
+                // Hide the "See More" button after it's clicked
+                seeMoreButton.style.display = 'none';
+            });
+        });
+    </script>
+    @endif
 </x-app-layout>

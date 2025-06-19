@@ -8,53 +8,92 @@ use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\GithubFlavoredMarkdownConverter;
+use App\Models\Category;
+use Illuminate\Support\Facades\Http;
 
 class BookController extends Controller
 {
     /**
-     * Display a paginated list of books.
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        $query = Book::query();
+        $query = Book::query()->with('category:id,name,slug');
 
-        if ($request->has('category')) {
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('author', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('category')) {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->category);
             });
         }
 
-        if ($request->has('search')) {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('author', 'like', '%' . $searchTerm . '%');
-            });
-        }
+        $books = $query->latest()->paginate(12);
+        $categories = Category::all();
 
-        $categoryName = $request->has('category')
-            ? \App\Models\Category::where('slug', $request->category)->value('name')
-            : null;
-
-        $books = $query->orderBy('title')->paginate(12);
-
-        return view('books.index', compact('books', 'categoryName'));
+        return view('books.index', compact('books', 'categories'));
     }
 
     /**
-     * Display a single book's details.
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Book  $book
+     * @return \Illuminate\Http\Response
      */
     public function show(Book $book)
     {
-        $book->load('reviews.user');
-        $relatedBooks = Book::where('category_id', $book->category_id)
+        // --- Google Books API Integration ---
+        $searchQuery = $book->isbn ? 'isbn:' . $book->isbn : 'intitle:' . urlencode($book->title);
+        $googleResponse = Http::get("https://www.googleapis.com/books/v1/volumes?q={$searchQuery}&maxResults=1");
+
+        if ($googleResponse->successful() && $googleResponse->json('totalItems') > 0) {
+            $volumeInfo = $googleResponse->json('items')[0]['volumeInfo'];
+
+            // Clean and set the publication date
+            if (empty($book->publication_date) && isset($volumeInfo['publishedDate'])) {
+                // Remove any non-numeric or non-dash characters to prevent parsing errors
+                $cleanedDate = preg_replace('/[^\d\-]/', '', $volumeInfo['publishedDate']);
+                $book->publication_date = $cleanedDate;
+            }
+
+            if (empty($book->publisher) && isset($volumeInfo['publisher'])) {
+                $book->publisher = $volumeInfo['publisher'];
+            }
+        }
+
+        // --- Gutendex (Project Gutenberg) API Integration ---
+        $gutenbergData = [];
+        $gutendexResponse = Http::get("https://gutendex.com/books?search=" . urlencode($book->title));
+
+        if ($gutendexResponse->successful() && $gutendexResponse->json('count') > 0) {
+            $gutenbergBook = $gutendexResponse->json('results')[0];
+            $gutenbergData['subjects'] = $gutenbergBook['subjects'] ?? [];
+            $gutenbergData['bookshelves'] = $gutenbergBook['bookshelves'] ?? [];
+        }
+
+        // --- Eager Loading and Related Books ---
+        $book->load([
+            'category:id,name,slug',
+            'reviews' => function ($query) {
+                $query->with('user:id,name')->latest();
+            }
+        ]);
+
+        $relatedBooks = Book::query()
+            ->select('id', 'title', 'author', 'cover_image_url')
+            ->where('category_id', $book->category_id)
             ->where('id', '!=', $book->id)
             ->inRandomOrder()
-            ->take(8)
+            ->limit(4)
             ->get();
-        return view('books.show', compact('book', 'relatedBooks'));
-    }
 
+        return view('books.show', compact('book', 'relatedBooks', 'gutenbergData'));
+    }
     /**
      * Display the book's content for reading.
      */

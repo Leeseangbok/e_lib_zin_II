@@ -42,7 +42,6 @@
                 <nav class="flex flex-col text-sm text-gray-300 space-y-1">
                     <a href="#" class="hover:underline">Home</a>
                     <a href="#" class="hover:underline">FAQs</a>
-                    <a href="#" class="hover:underline">Price Plan</a>
                     <a href="#" class="hover:underline">Features</a>
                 </nav>
             </div>
@@ -56,30 +55,15 @@
                 </nav>
             </div>
         </div>
-
-        <!-- Newsletter -->
+        <!-- Newsletter Signup -->
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold">Join Newsletter</h3>
-            <form class="space-y-3">
-                <input
-                    type="email"
-                    placeholder="Your email address"
-                    class="bg-gray-800 text-white border border-gray-700 rounded px-3 py-2 w-full placeholder:text-gray-400"
-                />
-                <button
-                    type="submit"
-                    class="w-full flex items-center justify-center bg-indigo-500 text-white hover:bg-indigo-600 rounded px-3 py-2 transition"
-                >
+            <h3 class="text-lg font-semibold">Newsletter Signup</h3>
+            <form action="#" method="POST" class="flex flex-col space-y-2">
+                <input type="email" name="email" placeholder="Enter your email"
+                       class="w-full px-4 py-2 rounded-md bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                <button type="submit"
+                        class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
                     Subscribe
-                    <svg
-                        class="ml-2 h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
                 </button>
             </form>
         </div>
