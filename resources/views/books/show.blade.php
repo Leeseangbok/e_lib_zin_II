@@ -144,86 +144,91 @@
                                 </div>
                             </div>
                         </div>
-                </div>
-
-                {{-- ### REVIEWS SECTION ### --}}
-                <div id="reviews-section" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
-                    <h3
-                        class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
-                        Community Reviews (<span id="reviews-count">{{ $reviews->count() }}</span>)
-                    </h3>
-
-                    @auth
-                        <form id="review-form" action="{{ route('reviews.store') }}" method="POST"
-                            class="bg-gray-700 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
-                            @csrf
-                            <input type="hidden" name="gutenberg_book_id" value="{{ $book['id'] }}">
-                            <h4 class="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-4">Leave a Review</h4>
-                            <div class="space-y-2 sm:space-y-4">
-                                <div>
-                                    <label for="rating"
-                                        class="block text-xs sm:text-sm font-medium text-gray-300 mb-1">Your Rating</label>
-                                    <select name="rating" id="rating"
-                                        class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm"
-                                        required>
-                                        <option value="" disabled selected>Select a rating...</option>
-                                        <option value="5">★★★★★ (Excellent)</option>
-                                        <option value="4">★★★★☆ (Great)</option>
-                                        <option value="3">★★★☆☆ (Good)</option>
-                                        <option value="2">★★☆☆☆ (Fair)</option>
-                                        <option value="1">★☆☆☆☆ (Poor)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="review_text"
-                                        class="block text-xs sm:text-sm font-medium text-gray-300 mb-1">Your Review</label>
-                                    <textarea id="review_text" name="review_text" rows="4"
-                                        class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm" placeholder="Share your thoughts..."
-                                        required minlength="10"></textarea>
-                                </div>
-                                <div>
-                                    <button type="submit"
-                                        class="w-full px-3 py-2.5 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition">Submit
-                                        Review</button>
-                                </div>
-                            </div>
-                        </form>
-                    @else
-                        <div class="bg-gray-700 p-4 sm:p-6 rounded-lg text-center">
-                            <p class="text-gray-300"><a href="{{ route('login') }}"
-                                    class="text-indigo-400 font-semibold hover:underline">Log in</a> or <a
-                                    href="{{ route('register') }}"
-                                    class="text-indigo-400 font-semibold hover:underline">register</a> to leave a review.
-                            </p>
-                        </div>
-                    @endauth
-
-                    <div id="reviews-list" class="space-y-4 sm:space-y-6">
-                        @forelse ($reviews as $review)
-                            <div class="review-item border-t border-gray-700 pt-4 sm:pt-6">
-                                <div class="flex items-center">
-                                    <div class="font-bold text-white">{{ $review->user->name }}</div>
-                                    <div class="ml-auto text-xs text-gray-500">
-                                        {{ $review->created_at->diffForHumans() }}</div>
-                                </div>
-                                <div class="flex items-center mt-1 mb-2"><x-star-rating :rating="$review->rating" /></div>
-                                <p class="text-gray-300 leading-relaxed">{{ $review->review_text }}</p>
-                            </div>
-                        @empty
-                            <p id="no-reviews-message" class="text-gray-500 italic">This book has no reviews yet.</p>
-                        @endforelse
                     </div>
 
-                    @if ($reviews->count() > 5)
-                        <div class="text-center mt-6">
-                            <button id="see-more-reviews" class="text-indigo-400 font-semibold hover:underline">See
-                                More</button>
+                    {{-- ### REVIEWS SECTION ### --}}
+                    <div id="reviews-section" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
+                        <h3
+                            class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
+                            Community Reviews (<span id="reviews-count">{{ $reviews->count() }}</span>)
+                        </h3>
+
+                        @auth
+                            <form id="review-form" action="{{ route('reviews.store') }}" method="POST"
+                                class="bg-gray-700 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
+                                @csrf
+                                <input type="hidden" name="gutenberg_book_id" value="{{ $book['id'] }}">
+                                <h4 class="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-4">Leave a Review</h4>
+                                <div class="space-y-2 sm:space-y-4">
+                                    <div>
+                                        <label for="rating"
+                                            class="block text-xs sm:text-sm font-medium text-gray-300 mb-1">Your
+                                            Rating</label>
+                                        <select name="rating" id="rating"
+                                            class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm"
+                                            required>
+                                            <option value="" disabled selected>Select a rating...</option>
+                                            <option value="5">★★★★★ (Excellent)</option>
+                                            <option value="4">★★★★☆ (Great)</option>
+                                            <option value="3">★★★☆☆ (Good)</option>
+                                            <option value="2">★★☆☆☆ (Fair)</option>
+                                            <option value="1">★☆☆☆☆ (Poor)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="review_text"
+                                            class="block text-xs sm:text-sm font-medium text-gray-300 mb-1">Your
+                                            Review</label>
+                                        <textarea id="review_text" name="review_text" rows="4"
+                                            class="w-full bg-gray-800 border-gray-600 text-white rounded-md shadow-sm" placeholder="Share your thoughts..."
+                                            required minlength="10"></textarea>
+                                    </div>
+                                    <div>
+                                        <button type="submit"
+                                            class="w-full px-3 py-2.5 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition">Submit
+                                            Review</button>
+                                    </div>
+                                </div>
+                            </form>
+                        @else
+                            <div class="bg-gray-700 p-4 sm:p-6 rounded-lg text-center">
+                                <p class="text-gray-300"><a href="{{ route('login') }}"
+                                        class="text-indigo-400 font-semibold hover:underline">Log in</a> or <a
+                                        href="{{ route('register') }}"
+                                        class="text-indigo-400 font-semibold hover:underline">register</a> to leave a
+                                    review.
+                                </p>
+                            </div>
+                        @endauth
+
+                        <div id="reviews-list" class="space-y-4 sm:space-y-6">
+                            @forelse ($reviews as $review)
+                                <div class="review-item border-t border-gray-700 pt-4 sm:pt-6">
+                                    <div class="flex items-center">
+                                        <div class="font-bold text-white">{{ $review->user->name }}</div>
+                                        <div class="ml-auto text-xs text-gray-500">
+                                            {{ $review->created_at->diffForHumans() }}</div>
+                                    </div>
+                                    <div class="flex items-center mt-1 mb-2"><x-star-rating :rating="$review->rating" /></div>
+                                    <p class="text-gray-300 leading-relaxed">{{ $review->review_text }}</p>
+                                </div>
+                            @empty
+                                <p id="no-reviews-message" class="text-gray-500 italic">This book has no reviews yet.
+                                </p>
+                            @endforelse
                         </div>
-                    @endif
+
+                        @if ($reviews->count() > 5)
+                            <div class="text-center mt-6">
+                                <button id="see-more-reviews"
+                                    class="text-indigo-400 font-semibold hover:underline">See
+                                    More</button>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     {{-- ######################################################## --}}
