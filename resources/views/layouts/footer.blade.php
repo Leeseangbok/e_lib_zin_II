@@ -73,7 +73,7 @@
     </div>
 
     <!-- Bottom Bar -->
-    <div class="border-t border-gray-700 py-3 sm:py-4 text-center text-xs sm:text-sm bg-gray-900">
+    <div class="fixed bottom-0 left-0 w-full border-t border-gray-700 py-3 sm:py-4 text-center text-xs sm:text-sm bg-gray-900 z-50">
         <div class="container mx-auto">
             <p class="text-gray-400">
                 © 2025 E-Lib. All rights reserved.

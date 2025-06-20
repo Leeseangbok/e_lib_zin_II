@@ -1,8 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-white leading-tight">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="font-semibold text-xl text-white leading-tight">
             {{ $categoryName ?? 'Browse All Books' }}
         </h2>
+        <p class="text-gray-400 text-sm mt-1">
+            {{ $books['count'] }} book{{ $books['count'] !== 1 ? 's' : '' }} found
+            @if (request('search'))
+                for "{{ request('search') }}"
+            @endif
+        </p>
+        </div>
     </x-slot>
 
     <div class="">
@@ -24,19 +32,27 @@
 
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-6">
                         @forelse ($books['results'] as $book)
-                            <div class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300 group">
                                 <a href="{{ route('books.show', $book['id']) }}" class="flex flex-col h-full">
-                                    <img class="w-full object-cover rounded-t-lg transition-transform duration-300 ease-in-out hover:scale-105
-                                        h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72"
-                                        src="{{ $book['formats']['image/jpeg'] ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
-                                        alt="Cover of {{ $book['title'] }}">
-                                    <div class="flex flex-col flex-grow p-2 sm:p-3">
-                                        <h3 class="font-semibold text-xs sm:text-sm text-white truncate" title="{{ $book['title'] }}">
-                                            {{ $book['title'] }}
-                                        </h3>
-                                        <p class="text-[10px] sm:text-xs text-gray-400 truncate">
-                                            {{ $book['authors'][0]['name'] ?? 'Unknown Author' }}
-                                        </p>
+                                    <div class="relative overflow-hidden">
+                                        <img class="w-full object-cover rounded-t-lg transition-transform duration-300 ease-in-out group-hover:scale-105
+                                            h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72"
+                                            src="{{ $book['formats']['image/jpeg'] ?? 'https://via.placeholder.com/300x400.png?text=No+Cover' }}"
+                                            alt="Cover of {{ $book['title'] }}">
+                                    </div>
+                                    <div class="flex flex-col flex-grow p-2 sm:p-3 justify-between">
+                                        <div>
+                                            <p class="text-xs text-indigo-400 font-semibold uppercase truncate">{{ $book['category_name'] ?? 'Uncategorized' }}</p>
+                                            <h3 class="font-semibold text-xs sm:text-sm text-white truncate mt-1" title="{{ $book['title'] }}">
+                                                {{ $book['title'] }}
+                                            </h3>
+                                            <p class="text-[10px] sm:text-xs text-gray-400 truncate">
+                                                {{ $book['authors'][0]['name'] ?? 'Unknown Author' }}
+                                            </p>
+                                        </div>
+                                        <div class="mt-2">
+                                            <x-star-rating :rating="$book['average_rating'] ?? 0" size="small" />
+                                        </div>
                                     </div>
                                 </a>
                             </div>
@@ -96,6 +112,7 @@
                             @endif
                         </nav>
                     </div>
+
                 </div>
             </div>
         </div>

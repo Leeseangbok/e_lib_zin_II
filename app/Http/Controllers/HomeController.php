@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Review;
 use App\Services\GutendexService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -15,9 +18,41 @@ class HomeController extends Controller
         $this->gutendexService = $gutendexService;
     }
 
+    /**
+     * Enrich book data with average ratings and a category name.
+     *
+     * @param array $books
+     * @return array
+     */
+    private function enrichBookData($books)
+    {
+        if (empty($books)) {
+            return [];
+        }
+
+        $bookIds = collect($books)->pluck('id')->all();
+
+        $reviews = Review::whereIn('gutenberg_book_id', $bookIds)
+            ->selectRaw('gutenberg_book_id, avg(rating) as average_rating')
+            ->groupBy('gutenberg_book_id')
+            ->get()
+            ->keyBy('gutenberg_book_id');
+
+        return collect($books)->map(function ($book) use ($reviews) {
+            $book['average_rating'] = $reviews->get($book['id'])->average_rating ?? 0;
+            $book['category_name'] = !empty($book['bookshelves']) ? Str::title(collect($book['bookshelves'])->first()) : 'General';
+            return $book;
+        })->all();
+    }
+
+    /**
+     * Display the welcome page with featured book carousels.
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
-        // Existing code for homePageCollections
+        // Fetch homepage collections
         $homePageCollections = Cache::remember('homepage_collections', now()->addHours(6), function () {
             return [
                 [
@@ -35,30 +70,32 @@ class HomeController extends Controller
             ];
         });
 
-        // --- New code for category carousel ---
-        $categories = [
-            ['name' => 'Fiction', 'slug' => 'fiction'],
-            ['name' => 'Fantasy', 'slug' => 'fantasy'],
-            ['name' => 'Adventure', 'slug' => 'adventure'],
-            ['name' => 'Horror', 'slug' => 'horror'],
-            ['name' => 'Science Fiction', 'slug' => 'science-fiction'],
-        ];
-
-        $categoryBooks = [];
-        foreach ($categories as $category) {
-            $cacheKey = 'category_books_' . $category['slug'];
-            // Cache for 6 hours
-            $categoryBooks[$category['slug']] = Cache::remember($cacheKey, now()->addHours(6), function () use ($category) {
-                // Fetch the first page of books for the category
-                return $this->gutendexService->getBooks(1, null, $category['slug'])['results'] ?? [];
-            });
+        // Enrich homepage collections with review data
+        foreach ($homePageCollections as &$collection) {
+            $collection['books'] = $this->enrichBookData($collection['books']);
         }
-        // --- End of new code ---
 
+        // Fetch all categories from the database for the filter list
+        $categories = Category::all();
+
+        // Fetch books for the featured carousels, caching the results
+        $childrenBooksData = Cache::remember('children_books', now()->addHours(6), function () {
+            return $this->gutendexService->getBooks(1, 'popular', 'children');
+        });
+        $fictionBooksData = Cache::remember('fiction_books', now()->addHours(6), function () {
+            return $this->gutendexService->getBooks(1, 'popular', 'fiction');
+        });
+        $mysteryBooksData = Cache::remember('mystery_books', now()->addHours(6), function () {
+            return $this->gutendexService->getBooks(1, 'popular', 'mystery');
+        });
+
+        // Pass all data to the view
         return view('welcome', [
             'homePageCollections' => $homePageCollections,
-            'categories' => $categories, // Pass categories to the view
-            'categoryBooks' => $categoryBooks, // Pass category books to the view
+            'categories' => $categories,
+            'childrenBooks' => collect($this->enrichBookData($childrenBooksData['results'] ?? [])),
+            'fictionBooks' => collect($this->enrichBookData($fictionBooksData['results'] ?? [])),
+            'mysteryBooks' => collect($this->enrichBookData($mysteryBooksData['results'] ?? [])),
         ]);
     }
 }

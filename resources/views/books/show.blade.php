@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center text-xs sm:text-sm">
+        <div class="flex flex-wrap items-center text-lg sm:text-xl">
             <a href="{{ route('welcome') }}" class="text-gray-400 hover:text-white">Home</a>
             <span class="mx-2 text-gray-500">/</span>
             <a href="{{ route('books.index') }}" class="text-gray-400 hover:text-white">Books</a>
@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="py-4 md:py-8">
+    <div class="">
         <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
             <div class="flex flex-col lg:flex-row gap-6 lg:gap-10">
                 {{-- LEFT SIDEBAR --}}
@@ -77,6 +77,19 @@
                                 <span class="text-indigo-400">Unknown Author</span>
                             @endforelse
                         </p>
+
+                        <div class="mt-3 flex items-center">
+                            @if ($reviews->count() > 0)
+                                <x-star-rating :rating="$averageRating" />
+                                <span class="ml-2 text-sm text-gray-400">({{ number_format($averageRating, 1) }} out of
+                                    5)</span>
+                            @else
+                                <span class="text-sm text-gray-400">No reviews yet</span>
+                            @endif
+                        </div>
+                        <p class="text-sm text-gray-400 mt-1">{{ $reviews->count() }}
+                            {{ Str::plural('review', $reviews->count()) }}</p>
+
 
                         {{-- Description Section --}}
                         <div class="mt-6 border-t border-gray-700 pt-6">
@@ -147,7 +160,7 @@
                     <div id="reviews" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
                         <h3
                             class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
-                               Community Reviews ({{ $reviews->count() }})
+                            Community Reviews ({{ $reviews->count() }})
                         </h3>
 
                         @auth
@@ -230,7 +243,31 @@
                         @endif
 
                     </div> {{-- End of reviews div --}}
-
+                    <!-- Related Books Section -->
+                    @if (!empty($relatedBooks))
+                        <div class="mt-12">
+                            <h2 class="text-2xl font-bold border-b border-gray-700 pb-2 mb-4">Related Books</h2>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                                @foreach ($relatedBooks as $relatedBook)
+                                    <div
+                                        class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
+                                        <a href="{{ route('books.show', $relatedBook['id']) }}"
+                                            class="flex flex-col h-full">
+                                            <img class="w-full h-48 object-cover"
+                                                src="{{ $relatedBook['formats']['image/jpeg'] ?? 'https://via.placeholder.com/300x450' }}"
+                                                alt="Cover of {{ $relatedBook['title'] }}">
+                                            <div class="p-4 flex flex-col flex-grow">
+                                                <h3 class="font-semibold text-md text-white truncate">
+                                                    {{ $relatedBook['title'] }}</h3>
+                                                <p class="text-sm text-gray-400">
+                                                    {{ $relatedBook['authors'][0]['name'] ?? 'N/A' }}</p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

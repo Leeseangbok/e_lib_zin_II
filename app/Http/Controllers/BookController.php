@@ -20,16 +20,49 @@ class BookController extends Controller
         $this->gutendexService = $gutendexService;
     }
 
+    private function enrichBookData(array $books): array
+    {
+        if (empty($books)) {
+            return [];
+        }
+
+        $bookIds = collect($books)->pluck('id')->all();
+
+        $reviews = Review::whereIn('gutenberg_book_id', $bookIds)
+            ->selectRaw('gutenberg_book_id, avg(rating) as average_rating')
+            ->groupBy('gutenberg_book_id')
+            ->get()
+            ->keyBy('gutenberg_book_id');
+
+        return collect($books)->map(function ($book) use ($reviews) {
+            $book['average_rating'] = $reviews->get($book['id'])->average_rating ?? 0;
+            return $book;
+        })->all();
+    }
+
     public function index(Request $request)
     {
         $page = $request->input('page', 1);
         $search = $request->input('search');
         $topic = $request->input('topic');
 
-        $bookData = $this->gutendexService->getBooks($page, $search, $topic);
+        $booksData = $this->gutendexService->getBooks($page, $search, $topic);
+        $booksData['results'] = $this->enrichBookData($booksData['results'] ?? []);
+
+        if (!empty($booksData['results'])) {
+            foreach ($booksData['results'] as &$book) {
+                if ($topic) {
+                    $book['category_name'] = Str::title(str_replace('-', ' ', $topic));
+                } else {
+                    $book['category_name'] = !empty($book['bookshelves']) ? Str::title(collect($book['bookshelves'])->first()) : 'General';
+                }
+            }
+        }
+
+        $categoryName = $topic ? Str::title(str_replace('-', ' ', $topic)) : null;
 
         return view('books.index', [
-            'books' => $bookData,
+            'books' => $booksData,
             'categoryName' => $topic ? ucfirst($topic) : ($search ? 'Search Results' : 'Browse All Books')
         ]);
     }
@@ -42,32 +75,45 @@ class BookController extends Controller
             abort(404, 'Book not found.');
         }
 
-        $isFavorite = false;
-        if (Auth::check()) {
-            $isFavorite = FavoriteBook::where('user_id', Auth::id())
-                ->where('gutenberg_book_id', $id)
-                ->exists();
+        $isFavorite = Auth::check() ? FavoriteBook::where('user_id', Auth::id())->where('gutenberg_book_id', $id)->exists() : false;
+
+        $reviews = Review::where('gutenberg_book_id', $id)->with('user')->latest()->get();
+        $averageRating = $reviews->avg('rating');
+
+        // --- Start of new related books logic ---
+        $relatedBooksData = [];
+
+        // Strategy 1: Find by the most relevant bookshelf/topic
+        if (!empty($book['bookshelves'])) {
+            // Let's try the first bookshelf as the topic. Topics are usually lowercase.
+            $topic = strtolower($book['bookshelves'][0]);
+            $relatedBooksData = $this->gutendexService->getBooks(1, null, $topic);
         }
 
-        $reviews = Review::where('gutenberg_book_id', $id)
-            ->with('user')
-            ->latest()
-            ->get();
+        // Strategy 2: Fallback to author if no books are found by topic
+        if (empty($relatedBooksData['results'])) {
+            $authorName = $book['authors'][0]['name'] ?? null;
+            if ($authorName) {
+                // Use the author name as the search term
+                $relatedBooksData = $this->gutendexService->getBooks(1, $authorName, null);
+            } else {
+                // Ensure we have a default empty array
+                $relatedBooksData = ['results' => []];
+            }
+        }
 
-        $authorName = $book['authors'][0]['name'] ?? null;
-        $relatedBooksData = $authorName ? $this->gutendexService->getBooks(1, $authorName) : ['results' => []];
-        $relatedBooks = array_filter($relatedBooksData['results'], fn($related) => $related['id'] != $id);
-        $relatedBooks = array_slice($relatedBooks, 0, 5);
+        // Process the results: filter out the current book, enrich with ratings, and take the top 5.
+        $allRelated = $relatedBooksData['results'] ?? [];
+        $filteredRelated = array_filter($allRelated, fn($related) => $related['id'] != $id);
+        $relatedBooks = array_slice($this->enrichBookData($filteredRelated), 0, 5);
+        // --- End of new related books logic ---
 
-        return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews'));
+        return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews', 'averageRating'));
     }
 
     public function toggleFavorite(Request $request)
     {
-        $request->validate([
-            'gutenberg_book_id' => 'required|integer',
-        ]);
-
+        $request->validate(['gutenberg_book_id' => 'required|integer']);
         $user = Auth::user();
         $gutenbergBookId = $request->gutenberg_book_id;
 
@@ -77,61 +123,42 @@ class BookController extends Controller
             $favorite->delete();
             return back()->with('success', 'Book removed from your library.');
         } else {
-            FavoriteBook::create([
-                'user_id' => $user->id,
-                'gutenberg_book_id' => $gutenbergBookId,
-            ]);
+            FavoriteBook::create(['user_id' => $user->id, 'gutenberg_book_id' => $gutenbergBookId]);
             return back()->with('success', 'Book added to your library.');
         }
     }
-// In app/Http/Controllers/BookController.php
 
-public function read($id)
-{
-    $book = $this->gutendexService->getBookById($id);
+    public function read($id)
+    {
+        $book = $this->gutendexService->getBookById($id);
+        $textContentUrl = $book['text_url'] ?? null;
 
-    // Get the text URL directly from the 'text_url' key provided by your service.
-    $textContentUrl = $book['text_url'] ?? null;
-
-    if (!$textContentUrl) {
-        // If the text_url is missing for any reason, log it and show an error.
-        Log::error("No 'text_url' found for book ID: {$id}", ['book_data' => $book]);
-        abort(404, 'No readable text version found for this book.');
-    }
-
-    try {
-        // Use the text_url to fetch the content.
-        $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl, $id) {
-            $response = Http::get($textContentUrl);
-
-            if ($response->failed()) {
-                Log::error("Failed to fetch book content for ID: {$id} from URL: {$textContentUrl}", ['status' => $response->status()]);
-                return null;
-            }
-
-            return $response->body();
-        });
-
-        if ($rawText === null) {
-            abort(500, 'Could not retrieve book content from the source.');
+        if (!$textContentUrl) {
+            Log::error("No 'text_url' found for book ID: {$id}", ['book_data' => $book]);
+            abort(404, 'No readable text version found for this book.');
         }
 
-    } catch (\Exception $e) {
-        Log::error("Exception while fetching book content for ID: {$id}", ['message' => $e->getMessage()]);
-        abort(500, 'An error occurred while trying to fetch the book content.');
+        try {
+            $rawText = cache()->remember("book.content.{$id}", 1440, function () use ($textContentUrl, $id) {
+                $response = Http::get($textContentUrl);
+                if ($response->failed()) {
+                    Log::error("Failed to fetch book content for ID: {$id} from URL: {$textContentUrl}", ['status' => $response->status()]);
+                    return null;
+                }
+                return $response->body();
+            });
+
+            if ($rawText === null) {
+                abort(500, 'Could not retrieve book content from the source.');
+            }
+        } catch (\Exception $e) {
+            Log::error("Exception while fetching book content for ID: {$id}", ['message' => $e->getMessage()]);
+            abort(500, 'An error occurred while trying to fetch the book content.');
+        }
+
+        $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
+        return view('books.read', ['book' => $book, 'chapters' => $chapters]);
     }
-
-    // The rest of the logic to split into chapters remains the same.
-    $chapters = $this->splitIntoChapters($this->extractBookContent($rawText));
-
-    return view('books.read', [
-        'book' => $book,
-        'chapters' => $chapters,
-    ]);
-}
-
-
-    // --- Private Helper Methods (unchanged from previous version) ---
 
     private function extractBookContent(string $rawText): string
     {
@@ -155,7 +182,6 @@ public function read($id)
         if ($endIndex === false) {
             $endIndex = strrpos($rawText, '*** END OF THE PROJECT GUTENBERG EBOOK');
         }
-
         if ($endIndex === false) {
             $endIndex = strlen($rawText);
         }

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex-1 min-w-0">
-                <h2 class="font-semibold text-lg sm:text-sm text-white truncate" title="{{ $book['title'] }}">
+                <h2 class="font-semibold text-lg sm:text-xl text-white truncate" title="{{ $book['title'] }}">
                     Reading: {{ Str::limit($book['title'], 50) }}
                 </h2>
             </div>

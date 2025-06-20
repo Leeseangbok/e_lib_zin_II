@@ -22,7 +22,7 @@ class CategoryController extends Controller
     public function show(Category $category)
     {
         // Load the books related to this category, paginated
-        $books = $category->books()->paginate(12);
+        $books = $category->books()->paginate(30);
         return view('categories.show', compact('category', 'books'));
     }
 }
