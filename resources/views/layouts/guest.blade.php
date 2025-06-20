@@ -33,7 +33,7 @@
                     <h1 class="text-7xl font-bold mb-4">Welcome to E-Lib</h1>
                     <p class="text-lg">Your digital library awaits.</p>
                 </div>
-                <div class="text-sm">
+                <div class="text-lg">
                     <p><strong>Email Support:</strong> leeseangbok15@gmail.com</p>
                     <p><strong>Phone Support:</strong> +855 97 536 0168</p>
                 </div>
