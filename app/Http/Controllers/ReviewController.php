@@ -11,7 +11,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 class ReviewController extends Controller
 {
     /**
-     * Store or update a review for a book.!
+     * Store or update a review for a book.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
