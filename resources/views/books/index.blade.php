@@ -45,36 +45,56 @@
                         @endforelse
                     </div>
 
-                    {{-- Simplified Pagination for API --}}
-                    <div class="mt-8 flex justify-between items-center">
-                        {{-- Previous Page Link --}}
-                        @if ($books['previous'])
-                             {{-- We need to extract the page number from the API's URL --}}
+                    {{-- Numbered Pagination --}}
+                    <div class="mt-8 flex justify-center items-center">
+                        <nav class="flex items-center space-x-2">
                             @php
-                                $prev_params = [];
-                                parse_str(parse_url($books['previous'], PHP_URL_QUERY), $prev_params);
-                                $prev_page = $prev_params['page'] ?? 1;
+                                $totalBooks = $books['count'];
+                                $perPage = 32; // As per Gutendex API default
+                                $totalPages = ceil($totalBooks / $perPage);
+                                $currentPage = request()->input('page', 1);
+                                $window = 2; // Number of pages to show on each side of the current page
                             @endphp
-                            <a href="{{ route('books.index', ['page' => $prev_page] + request()->except('page')) }}" class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition text-sm">
-                                ← Previous
-                            </a>
-                        @else
-                            <span class="px-4 py-2 text-gray-500 bg-gray-700 rounded-lg cursor-not-allowed text-sm">← Previous</span>
-                        @endif
 
-                        {{-- Next Page Link --}}
-                        @if ($books['next'])
-                            @php
-                                $next_params = [];
-                                parse_str(parse_url($books['next'], PHP_URL_QUERY), $next_params);
-                                $next_page = $next_params['page'] ?? 1;
-                            @endphp
-                            <a href="{{ route('books.index', ['page' => $next_page] + request()->except('page')) }}" class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition text-sm">
-                                Next →
-                            </a>
-                        @else
-                            <span class="px-4 py-2 text-gray-500 bg-gray-700 rounded-lg cursor-not-allowed text-sm">Next →</span>
-                        @endif
+                            {{-- Previous Page Link --}}
+                            @if ($books['previous'])
+                                @php
+                                    $prev_params = [];
+                                    parse_str(parse_url($books['previous'], PHP_URL_QUERY), $prev_params);
+                                    $prev_page = $prev_params['page'] ?? $currentPage - 1;
+                                @endphp
+                                <a href="{{ route('books.index', ['page' => $prev_page] + request()->except('page')) }}" class="px-3 py-1 text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition text-sm">
+                                    &larr;
+                                </a>
+                            @else
+                                <span class="px-3 py-1 text-gray-500 bg-gray-700 rounded-lg cursor-not-allowed text-sm">&larr;</span>
+                            @endif
+
+                            {{-- Page Number Links --}}
+                            @for ($i = 1; $i <= $totalPages; $i++)
+                                @if ($i == 1 || $i == $totalPages || ($i >= $currentPage - $window && $i <= $currentPage + $window))
+                                    <a href="{{ route('books.index', ['page' => $i] + request()->except('page')) }}" class="px-3 py-1 text-white rounded-lg transition text-sm {{ $i == $currentPage ? 'bg-indigo-800' : 'bg-indigo-600 hover:bg-indigo-500' }}">
+                                        {{ $i }}
+                                    </a>
+                                @elseif ($i == $currentPage - $window - 1 || $i == $currentPage + $window + 1)
+                                    <span class="px-3 py-1 text-gray-500">...</span>
+                                @endif
+                            @endfor
+
+                            {{-- Next Page Link --}}
+                            @if ($books['next'])
+                                @php
+                                    $next_params = [];
+                                    parse_str(parse_url($books['next'], PHP_URL_QUERY), $next_params);
+                                    $next_page = $next_params['page'] ?? $currentPage + 1;
+                                @endphp
+                                <a href="{{ route('books.index', ['page' => $next_page] + request()->except('page')) }}" class="px-3 py-1 text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition text-sm">
+                                    &rarr;
+                                </a>
+                            @else
+                                <span class="px-3 py-1 text-gray-500 bg-gray-700 rounded-lg cursor-not-allowed text-sm">&rarr;</span>
+                            @endif
+                        </nav>
                     </div>
                 </div>
             </div>
