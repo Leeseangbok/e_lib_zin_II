@@ -50,14 +50,13 @@
                     <x-book-collection-shelf title="Mystery" topic="mystery" :books="$mysteryBooks" />
                 </div>
 
-                <div id="category-filter" class="mt-16">
-                    <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
-                        <h3 class="text-2xl font-bold text-white mb-6 text-center">Browse by Category</h3>
-                        <div class="flex flex-wrap gap-4 justify-center">
+                <div id="category-filter" class="mt-12 w-full">
+                    <div class="bg-gray-800 rounded-lg p-4 shadow-md w-full">
+                        <h3 class="text-xl font-bold text-white mb-4 text-center">Browse by Category</h3>
+                        <div class="flex flex-wrap gap-2 justify-center">
                             @foreach ($categories as $category)
                                 <a href="{{ route('books.index', ['topic' => $category['slug']]) }}"
-                                   class="px-6 py-3 bg-indigo-600 text-white rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow-md min-w-[150px] text-center
-                                   w-full sm:w-auto">
+                                   class="px-4 py-1 bg-indigo-600 text-white rounded text-base font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow min-w-[100px] text-center w-full sm:w-auto">
                                     {{ $category['name'] }}
                                 </a>
                             @endforeach

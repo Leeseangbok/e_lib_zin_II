@@ -18,7 +18,28 @@ class CategorySeeder extends Seeder
             'Fantasy',
             'Horror',
             'Historical Fiction',
-            'Romance'
+            'Romance',
+            'Thriller',
+            'Non-Fiction',
+            'Biography',
+            'Self-Help',
+            'Health & Wellness',
+            'Travel',
+            'Cooking',
+            'Technology',
+            'Education',
+            'Philosophy',
+            'Religion',
+            'Politics',
+            'Business',
+            'Art',
+            'Poetry',
+            'Children\'s',
+            'Young Adult',
+            'Comics',
+            'Classics',
+            'Short Stories',
+            'Drama'
         ];
 
         foreach ($categories as $name) {
