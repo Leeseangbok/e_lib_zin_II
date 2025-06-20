@@ -21,10 +21,12 @@
                             <a href="{{ route('books.read', $book['id']) }}"
                                 class="w-full text-center py-3 px-4 bg-indigo-600 text-white font-bold rounded-md hover:bg-indigo-700 transition text-base">Read
                                 Now</a>
-                            <div class="mt-4">
+
+                           <div class="mt-4">
                                 @if ($isFavorite)
-                                    <button id="library-toggle-btn"
-                                        data-action-url="{{ route('library.remove') }}"
+                                    {{-- Redesigned "Remove" button --}}
+                                    <button id="library-toggle-btn" {{-- <--- ADD THIS ID --}}
+                                        data-action-url="{{ route('library.remove') }}" {{-- <--- ADD URL here --}}
                                         class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-red-600 hover:bg-red-700 transition text-white shadow-lg border-2 border-red-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
                                             fill="currentColor">
@@ -35,8 +37,9 @@
                                         <span>Remove from Library</span>
                                     </button>
                                 @else
-                                    <button id="library-toggle-btn"
-                                        data-action-url="{{ route('library.add') }}"
+                                    {{-- Redesigned "Add" button --}}
+                                    <button id="library-toggle-btn" {{-- <--- ADD THIS ID --}}
+                                        data-action-url="{{ route('library.add') }}" {{-- <--- ADD URL here --}}
                                         class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-green-600 hover:bg-green-700 transition text-white shadow-lg border-2 border-green-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                             fill="currentColor" aria-hidden="true">
@@ -58,8 +61,7 @@
                         {{-- Book Title and Author --}}
                         <h1 class="text-2xl sm:text-3xl md:text-5xl font-bold text-white leading-tight break-words">
                             {{ $book['title'] }}</h1>
-                        <p class="mt-2 text-base sm:text-xl text-gray-400">
-                            by
+                        <p class="mt-2 text-base sm:text-xl text-gray-400">by
                             @forelse ($book['authors'] as $author)
                                 <a href="{{ route('books.index', ['search' => $author['name']]) }}"
                                     class="text-indigo-400 hover:underline">{{ $author['name'] }}</a>{{ !$loop->last ? ',' : '' }}
@@ -67,13 +69,10 @@
                                 <span class="text-indigo-400">Unknown Author</span>
                             @endforelse
                         </p>
-
-                        {{-- Ratings --}}
                         <div class="mt-3 flex items-center">
                             @if ($reviews->count() > 0)
                                 <x-star-rating :rating="$averageRating" />
-                                <span class="ml-2 text-sm text-gray-400">({{ number_format($averageRating, 1) }} out
-                                    of
+                                <span class="ml-2 text-sm text-gray-400">({{ number_format($averageRating, 1) }} out of
                                     5)</span>
                             @else
                                 <span class="text-sm text-gray-400">No reviews yet</span>
@@ -86,9 +85,9 @@
                         {{-- Description Section --}}
                         <div class="mt-6 border-t border-gray-700 pt-6">
                             <h3 class="text-2xl font-semibold text-white mb-4">Description</h3>
-                            {{-- SECURITY FIX: Use {{}} to prevent XSS. Enclose in <p> tag for formatting. --}}
                             <div class="text-gray-300 leading-relaxed text-base prose prose-invert max-w-none">
-                                <p>{{ $book['description'] ?? 'No description available.' }}</p>
+                                {{-- Using optional helper and providing a default message --}}
+                                {!! $book['description'] ?? '<p>No description available.</p>' !!}
                             </div>
                         </div>
 
@@ -104,17 +103,16 @@
                                         class="w-full sm:w-3/4">{{ $book['id'] }}</span></div>
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Copyright:</strong><span
-                                        class="w-full sm:w-3/4">{{ ($book['copyright'] ?? false) ? 'Yes' : 'No' }}</span>
+                                        class="w-full sm:w-3/4">{{ $book['copyright'] ?? false ? 'Yes' : 'No' }}</span>
                                 </div>
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Downloads:</strong><span
                                         class="w-full sm:w-3/4">{{ number_format($book['download_count'] ?? 0) }}
                                         total</span>
                                 </div>
-                                {{-- BUG FIX: Use null coalescing operator ?? to prevent error if 'languages' is not set --}}
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Language:</strong><span
-                                        class="w-full sm:w-3/4">{{ implode(', ', $book['languages'] ?? []) }}</span>
+                                        class="w-full sm:w-3/4">{{ implode(', ', $book['languages']) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -149,15 +147,15 @@
                         </div>
                     </div>
 
-                    {{-- REVIEWS SECTION --}}
-                    <div id="reviews" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
+                    {{-- ### REVIEWS SECTION ### --}}
+                    <div id="reviews-section" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
                         <h3
                             class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
-                            Community Reviews ({{ $reviews->count() }})
+                            Community Reviews (<span id="reviews-count">{{ $reviews->count() }}</span>)
                         </h3>
 
                         @auth
-                            <form action="{{ route('reviews.store') }}" method="POST"
+                            <form id="review-form" action="{{ route('reviews.store') }}" method="POST"
                                 class="bg-gray-700 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
                                 @csrf
                                 <input type="hidden" name="gutenberg_book_id" value="{{ $book['id'] }}">
@@ -188,9 +186,8 @@
                                     </div>
                                     <div>
                                         <button type="submit"
-                                            class="w-full px-3 py-2 sm:px-5 sm:py-2.5 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition text-sm sm:text-base">
-                                            Submit Review
-                                        </button>
+                                            class="w-full px-3 py-2 sm:px-5 sm:py-2.5 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition text-sm sm:text-base">Submit
+                                            Review</button>
                                     </div>
                                 </div>
                             </form>
@@ -198,7 +195,8 @@
                             <div class="bg-gray-700 p-4 sm:p-6 rounded-lg text-center">
                                 <p class="text-gray-300 text-xs sm:text-base">
                                     <a href="{{ route('login') }}"
-                                        class="text-indigo-400 font-semibold hover:underline">Log in</a> or
+                                        class="text-indigo-400 font-semibold hover:underline">Log
+                                        in</a> or
                                     <a href="{{ route('register') }}"
                                         class="text-indigo-400 font-semibold hover:underline">register</a> to leave a
                                     review.
@@ -211,19 +209,19 @@
                                 <div class="review-item border-t border-gray-700 pt-4 sm:pt-6">
                                     <div class="flex flex-col sm:flex-row items-start sm:items-center">
                                         <div class="font-bold text-white text-xs sm:text-base">
-                                            {{ $review->user->name }}</div>
-                                        <div class="sm:ml-auto text-xs text-gray-500">
-                                            {{ $review->created_at->diffForHumans() }}
+                                            {{ $review->user->name }}
                                         </div>
+                                        <div class="sm:ml-auto text-xs text-gray-500">
+                                            {{ $review->created_at->diffForHumans() }}</div>
                                     </div>
-                                    <div class="flex items-center mt-1 mb-2">
-                                        <x-star-rating :rating="$review->rating" />
-                                    </div>
+                                    <div class="flex items-center mt-1 mb-2"><x-star-rating :rating="$review->rating" /></div>
                                     <p class="text-gray-300 leading-relaxed text-xs sm:text-base">
                                         {{ $review->review_text }}</p>
                                 </div>
                             @empty
-                                <p class="text-gray-500 italic text-xs sm:text-base">This book has no reviews yet.</p>
+                                <p id="no-reviews-message" class="text-gray-500 italic text-xs sm:text-base">This book
+                                    has
+                                    no reviews yet.</p>
                             @endforelse
                         </div>
 
@@ -234,105 +232,127 @@
                                     More</button>
                             </div>
                         @endif
-
                     </div>
-
-                    @if (!empty($relatedBooks))
-                        <div class="mt-12">
-                            <h2 class="text-2xl font-bold border-b border-gray-700 pb-2 mb-4">Related Books</h2>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                                @foreach ($relatedBooks as $relatedBook)
-                                    <div
-                                        class="flex flex-col bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
-                                        <a href="{{ route('books.show', $relatedBook['id']) }}"
-                                            class="flex flex-col h-full">
-                                            <img class="w-full h-48 object-cover"
-                                                src="{{ $relatedBook['formats']['image/jpeg'] ?? 'https://via.placeholder.com/300x450' }}"
-                                                alt="Cover of {{ $relatedBook['title'] }}">
-                                            <div class="p-4 flex flex-col flex-grow">
-                                                <h3 class="font-semibold text-md text-white truncate">
-                                                    {{ $relatedBook['title'] }}</h3>
-                                                <p class="text-sm text-gray-400">
-                                                    {{ $relatedBook['authors'][0]['name'] ?? 'N/A' }}</p>
-                                            </div>
-                                        </a>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
     </div>
 
     @push('scripts')
-        {{-- JAVASCRIPT FIX: This script must always be present for the library button to work. --}}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const toggleBtn = document.getElementById('library-toggle-btn');
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', function(e) {
-                        e.preventDefault(); // Prevent default form submission
+                // --- Unified AJAX Function ---
+                async function sendRequest(url, method, body) {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    return response.json();
+                }
 
+                // --- 1. Library (Favorite) Toggle ---
+                const libraryToggleBtn = document.getElementById('library-toggle-btn');
+                if (libraryToggleBtn) {
+                    libraryToggleBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         const url = this.dataset.actionUrl;
-                        const isFavorite = {{ $isFavorite ? 'true' : 'false' }};
+                        const bookId = this.dataset.bookId;
+                        const isFavorite = this.innerHTML.includes('Remove');
                         const method = isFavorite ? 'DELETE' : 'POST';
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            'content');
 
-                        fetch(url, {
-                                method: method,
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': csrfToken,
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    gutenberg_book_id: {{ $book['id'] }}
-                                })
+                        sendRequest(url, method, {
+                                gutenberg_book_id: bookId
                             })
-                            .then(response => {
-                                if (response.ok) {
-                                    // Success! Reload the page to show the updated button state.
-                                    window.location.reload();
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.reload(); // Simple reload to update button state
                                 } else {
-                                    alert('An error occurred. Please try again.');
+                                    alert(data.message || 'An error occurred.');
                                 }
                             })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('An error occurred. Please try again.');
-                            });
+                            .catch(error => console.error('Library toggle error:', error));
+                    });
+                }
+
+                // --- 2. Review Form Submission ---
+                const reviewForm = document.getElementById('review-form');
+                if (reviewForm) {
+                    reviewForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const actionUrl = this.action;
+                        const formData = new FormData(this);
+                        const data = Object.fromEntries(formData.entries());
+
+                        fetch(actionUrl, {
+                                method: 'POST',
+                                body: formData, // Use FormData directly for file uploads in the future
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json',
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    reviewForm.reset();
+                                    const reviewsList = document.getElementById('reviews-list');
+                                    const noReviewsMessage = document.getElementById('no-reviews-message');
+                                    if (noReviewsMessage) {
+                                        noReviewsMessage.remove();
+                                    }
+                                    const newReviewHtml = `
+                        <div class="review-item border-t border-gray-700 pt-4 sm:pt-6">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center">
+                                <div class="font-bold text-white text-xs sm:text-base">${data.review.user_name}</div>
+                                <div class="sm:ml-auto text-xs text-gray-500">${data.review.created_at_diff}</div>
+                            </div>
+                            <div class="flex items-center mt-1 mb-2">
+                                <div class="flex text-yellow-400">
+                                    ${'★'.repeat(data.review.rating)}${'☆'.repeat(5 - data.review.rating)}
+                                </div>
+                            </div>
+                            <p class="text-gray-300 leading-relaxed text-xs sm:text-base">${data.review.review_text}</p>
+                        </div>`;
+                                    reviewsList.insertAdjacentHTML('afterbegin', newReviewHtml);
+
+                                    // Update reviews count
+                                    const reviewsCount = document.getElementById('reviews-count');
+                                    reviewsCount.textContent = parseInt(reviewsCount.textContent) + 1;
+                                } else {
+                                    alert(data.message || 'There was an error submitting your review.');
+                                }
+                            })
+                            .catch(error => console.error('Review submission error:', error));
+                    });
+                }
+
+                // --- 3. "See More" Reviews ---
+                const seeMoreButton = document.getElementById('see-more-reviews');
+                if (seeMoreButton) {
+                    const reviewsList = document.getElementById('reviews-list');
+                    const reviewItems = reviewsList.querySelectorAll('.review-item');
+
+                    reviewItems.forEach((item, index) => {
+                        if (index >= 5) {
+                            item.style.display = 'none';
+                        }
+                    });
+
+                    seeMoreButton.addEventListener('click', function() {
+                        reviewItems.forEach(item => {
+                            item.style.display = 'block';
+                        });
+                        this.style.display = 'none';
                     });
                 }
             });
         </script>
-
-        {{-- JAVASCRIPT FIX: This script should ONLY be present if there are more than 5 reviews. --}}
-        @if ($reviews->count() > 5)
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const reviewsList = document.getElementById('reviews-list');
-                    const seeMoreButton = document.getElementById('see-more-reviews');
-                    const reviewItems = reviewsList.getElementsByClassName('review-item');
-
-                    // Hide reviews starting from the 6th one
-                    for (let i = 5; i < reviewItems.length; i++) {
-                        reviewItems[i].style.display = 'none';
-                    }
-
-                    if (seeMoreButton) {
-                        seeMoreButton.addEventListener('click', function() {
-                            for (let i = 5; i < reviewItems.length; i++) {
-                                reviewItems[i].style.display = 'block';
-                            }
-                            seeMoreButton.style.display = 'none';
-                        });
-                    }
-                });
-            </script>
-        @endif
     @endpush
 </x-app-layout>
