@@ -196,8 +196,7 @@
                                         class="text-indigo-400 font-semibold hover:underline">Log in</a> or <a
                                         href="{{ route('register') }}"
                                         class="text-indigo-400 font-semibold hover:underline">register</a> to leave a
-                                    review.
-                                </p>
+                                    review.</p>
                             </div>
                         @endauth
 
@@ -221,8 +220,7 @@
                         @if ($reviews->count() > 5)
                             <div class="text-center mt-6">
                                 <button id="see-more-reviews"
-                                    class="text-indigo-400 font-semibold hover:underline">See
-                                    More</button>
+                                    class="text-indigo-400 font-semibold hover:underline">See More</button>
                             </div>
                         @endif
                     </div>
