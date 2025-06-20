@@ -24,31 +24,44 @@
 
                             {{-- This section is now controlled by the unified script --}}
                             <div class="mt-4">
-                                @if ($isFavorite)
-                                    <button id="library-toggle-btn" data-action-url="{{ route('library.remove') }}"
-                                        data-book-id="{{ $book['id'] }}"
-                                        class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-red-600 hover:bg-red-700 transition text-white shadow-lg border-2 border-red-700">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                                            fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                        <span>Remove from Library</span>
-                                    </button>
+                                @auth
+                                    @if ($isFavorite)
+                                        <button id="library-toggle-btn" data-action-url="{{ route('library.remove') }}"
+                                            data-book-id="{{ $book['id'] }}"
+                                            class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-red-600 hover:bg-red-700 transition text-white shadow-lg border-2 border-red-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                                                fill="currentColor">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            <span>Remove from Library</span>
+                                        </button>
+                                    @else
+                                        <button id="library-toggle-btn" data-action-url="{{ route('library.add') }}"
+                                            data-book-id="{{ $book['id'] }}"
+                                            class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-green-600 hover:bg-green-700 transition text-white shadow-lg border-2 border-green-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                                fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            <span>Add to Library</span>
+                                        </button>
+                                    @endif
                                 @else
-                                    <button id="library-toggle-btn" data-action-url="{{ route('library.add') }}"
-                                        data-book-id="{{ $book['id'] }}"
-                                        class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-green-600 hover:bg-green-700 transition text-white shadow-lg border-2 border-green-700">
+                                    <a href="{{ route('login') }}"
+                                        class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white shadow-lg border-2 border-indigo-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                             fill="currentColor" aria-hidden="true">
                                             <path fill-rule="evenodd"
                                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
                                                 clip-rule="evenodd" />
                                         </svg>
-                                        <span>Add to Library</span>
-                                    </button>
-                                @endif
+                                        <span>Log in to add to Library</span>
+                                    </a>
+                                @endauth
                             </div>
                         </div>
                     </div>
