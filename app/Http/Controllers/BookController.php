@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\GutendexService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Auth;
 use App\Models\FavoriteBook;
 use App\Models\Review;
-use Illuminate\Support\Facades\Log; // Import Log facade
+use App\Services\GutendexService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class BookController extends Controller
 {
@@ -83,50 +83,33 @@ class BookController extends Controller
         // --- Start of new related books logic ---
         $relatedBooksData = [];
 
-        // Strategy 1: Find by the most relevant bookshelf/topic
         if (!empty($book['bookshelves'])) {
-            // Let's try the first bookshelf as the topic. Topics are usually lowercase.
             $topic = strtolower($book['bookshelves'][0]);
             $relatedBooksData = $this->gutendexService->getBooks(1, null, $topic);
         }
 
-        // Strategy 2: Fallback to author if no books are found by topic
         if (empty($relatedBooksData['results'])) {
             $authorName = $book['authors'][0]['name'] ?? null;
             if ($authorName) {
-                // Use the author name as the search term
                 $relatedBooksData = $this->gutendexService->getBooks(1, $authorName, null);
             } else {
-                // Ensure we have a default empty array
                 $relatedBooksData = ['results' => []];
             }
         }
 
-        // Process the results: filter out the current book, enrich with ratings, and take the top 5.
         $allRelated = $relatedBooksData['results'] ?? [];
-        $filteredRelated = array_filter($allRelated, fn($related) => $related['id'] != $id);
+        $filteredRelated = array_filter($allRelated, fn ($related) => $related['id'] != $id);
         $relatedBooks = array_slice($this->enrichBookData($filteredRelated), 0, 5);
         // --- End of new related books logic ---
 
         return view('books.show', compact('book', 'relatedBooks', 'isFavorite', 'reviews', 'averageRating'));
     }
 
-    public function toggleFavorite(Request $request)
-    {
-        $request->validate(['gutenberg_book_id' => 'required|integer']);
-        $user = Auth::user();
-        $gutenbergBookId = $request->gutenberg_book_id;
-
-        $favorite = $user->favoriteBooks()->where('gutenberg_book_id', $gutenbergBookId)->first();
-
-        if ($favorite) {
-            $favorite->delete();
-            return back()->with('success', 'Book removed from your library.');
-        } else {
-            FavoriteBook::create(['user_id' => $user->id, 'gutenberg_book_id' => $gutenbergBookId]);
-            return back()->with('success', 'Book added to your library.');
-        }
-    }
+    /*
+     * The toggleFavorite() method was removed because this functionality is now
+     * handled by the add() and remove() methods in LibraryController,
+     * which are called via AJAX from the book details page.
+     */
 
     public function read($id)
     {

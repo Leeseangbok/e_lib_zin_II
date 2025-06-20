@@ -21,20 +21,10 @@
                             <a href="{{ route('books.read', $book['id']) }}"
                                 class="w-full text-center py-3 px-4 bg-indigo-600 text-white font-bold rounded-md hover:bg-indigo-700 transition text-base">Read
                                 Now</a>
-                            <form action="{{ $isFavorite ? route('library.remove') : route('library.add') }}"
-                                method="POST" class="mt-4">
-                                @csrf
-
-                                {{-- For the remove action, this directive tells Laravel to treat the POST request as a DELETE request. --}}
+                            <div class="mt-4">
                                 @if ($isFavorite)
-                                    @method('DELETE')
-                                @endif
-
-                                <input type="hidden" name="gutenberg_book_id" value="{{ $book['id'] }}">
-
-                                @if ($isFavorite)
-                                    {{-- Redesigned "Remove" button --}}
-                                    <button type="submit"
+                                    <button id="library-toggle-btn"
+                                        data-action-url="{{ route('library.remove') }}"
                                         class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-red-600 hover:bg-red-700 transition text-white shadow-lg border-2 border-red-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
                                             fill="currentColor">
@@ -45,8 +35,8 @@
                                         <span>Remove from Library</span>
                                     </button>
                                 @else
-                                    {{-- Redesigned "Add" button --}}
-                                    <button type="submit"
+                                    <button id="library-toggle-btn"
+                                        data-action-url="{{ route('library.add') }}"
                                         class="w-full flex items-center justify-center gap-2 py-3 px-4 text-base font-bold rounded-lg bg-green-600 hover:bg-green-700 transition text-white shadow-lg border-2 border-green-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                             fill="currentColor" aria-hidden="true">
@@ -57,7 +47,7 @@
                                         <span>Add to Library</span>
                                     </button>
                                 @endif
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,10 +68,12 @@
                             @endforelse
                         </p>
 
+                        {{-- Ratings --}}
                         <div class="mt-3 flex items-center">
                             @if ($reviews->count() > 0)
                                 <x-star-rating :rating="$averageRating" />
-                                <span class="ml-2 text-sm text-gray-400">({{ number_format($averageRating, 1) }} out of
+                                <span class="ml-2 text-sm text-gray-400">({{ number_format($averageRating, 1) }} out
+                                    of
                                     5)</span>
                             @else
                                 <span class="text-sm text-gray-400">No reviews yet</span>
@@ -94,9 +86,9 @@
                         {{-- Description Section --}}
                         <div class="mt-6 border-t border-gray-700 pt-6">
                             <h3 class="text-2xl font-semibold text-white mb-4">Description</h3>
+                            {{-- SECURITY FIX: Use {{}} to prevent XSS. Enclose in <p> tag for formatting. --}}
                             <div class="text-gray-300 leading-relaxed text-base prose prose-invert max-w-none">
-                                {{-- Using optional helper and providing a default message --}}
-                                {!! $book['description'] ?? '<p>No description available.</p>' !!}
+                                <p>{{ $book['description'] ?? 'No description available.' }}</p>
                             </div>
                         </div>
 
@@ -112,16 +104,17 @@
                                         class="w-full sm:w-3/4">{{ $book['id'] }}</span></div>
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Copyright:</strong><span
-                                        class="w-full sm:w-3/4">{{ $book['copyright'] ?? false ? 'Yes' : 'No' }}</span>
+                                        class="w-full sm:w-3/4">{{ ($book['copyright'] ?? false) ? 'Yes' : 'No' }}</span>
                                 </div>
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Downloads:</strong><span
                                         class="w-full sm:w-3/4">{{ number_format($book['download_count'] ?? 0) }}
                                         total</span>
                                 </div>
+                                {{-- BUG FIX: Use null coalescing operator ?? to prevent error if 'languages' is not set --}}
                                 <div class="flex flex-wrap"><strong
                                         class="w-full sm:w-1/4 font-semibold text-white">Language:</strong><span
-                                        class="w-full sm:w-3/4">{{ implode(', ', $book['languages']) }}</span>
+                                        class="w-full sm:w-3/4">{{ implode(', ', $book['languages'] ?? []) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +149,7 @@
                         </div>
                     </div>
 
-                    {{-- ### REVIEWS SECTION (CORRECTED) ### --}}
+                    {{-- REVIEWS SECTION --}}
                     <div id="reviews" class="mt-6 sm:mt-10 bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg">
                         <h3
                             class="text-2xl sm:text-3xl font-semibold text-white border-b border-gray-700 pb-2 sm:pb-4 mb-4 sm:mb-6">
@@ -242,8 +235,8 @@
                             </div>
                         @endif
 
-                    </div> {{-- End of reviews div --}}
-                    <!-- Related Books Section -->
+                    </div>
+
                     @if (!empty($relatedBooks))
                         <div class="mt-12">
                             <h2 class="text-2xl font-bold border-b border-gray-700 pb-2 mb-4">Related Books</h2>
@@ -274,56 +267,58 @@
     </div>
 
     @push('scripts')
+        {{-- JAVASCRIPT FIX: This script must always be present for the library button to work. --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const toggleBtn = document.getElementById('library-toggle-btn');
+
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function(e) {
+                        e.preventDefault(); // Prevent default form submission
+
+                        const url = this.dataset.actionUrl;
+                        const isFavorite = {{ $isFavorite ? 'true' : 'false' }};
+                        const method = isFavorite ? 'DELETE' : 'POST';
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content');
+
+                        fetch(url, {
+                                method: method,
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    gutenberg_book_id: {{ $book['id'] }}
+                                })
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    // Success! Reload the page to show the updated button state.
+                                    window.location.reload();
+                                } else {
+                                    alert('An error occurred. Please try again.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred. Please try again.');
+                            });
+                    });
+                }
+            });
+        </script>
+
+        {{-- JAVASCRIPT FIX: This script should ONLY be present if there are more than 5 reviews. --}}
         @if ($reviews->count() > 5)
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const toggleBtn = document.getElementById('library-toggle-btn');
-
-                    if (toggleBtn) {
-                        toggleBtn.addEventListener('click', function() {
-                            const bookId = this.dataset.bookId;
-                            const url = this.dataset.actionUrl;
-                            const isFavorite = this.dataset.isFavorite === 'true';
-
-                            // Determine the correct HTTP method
-                            const method = isFavorite ? 'DELETE' : 'POST';
-
-                            // Get the CSRF token from the meta tag in your main layout
-                            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                'content');
-
-                            fetch(url, {
-                                    method: method,
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': csrfToken,
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        gutenberg_book_id: bookId
-                                    })
-                                })
-                                .then(response => {
-                                    if (response.ok) {
-                                        // Success! Reload the page to show the updated button state.
-                                        window.location.reload();
-                                    } else {
-                                        // Handle errors, e.g., show an alert
-                                        alert('An error occurred. Please try again.');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    alert('An error occurred. Please try again.');
-                                });
-                        });
-                    }
-                });
                 document.addEventListener('DOMContentLoaded', function() {
                     const reviewsList = document.getElementById('reviews-list');
                     const seeMoreButton = document.getElementById('see-more-reviews');
                     const reviewItems = reviewsList.getElementsByClassName('review-item');
 
+                    // Hide reviews starting from the 6th one
                     for (let i = 5; i < reviewItems.length; i++) {
                         reviewItems[i].style.display = 'none';
                     }

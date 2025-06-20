@@ -2,59 +2,52 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FavoriteBook;
 use App\Services\GutendexService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
-use App\Models\FavoriteBook;
+use Illuminate\Support\Facades\Auth;
 
 class LibraryController extends Controller
 {
     protected $gutendexService;
 
-    // Inject the GutendexService
     public function __construct(GutendexService $gutendexService)
     {
         $this->gutendexService = $gutendexService;
     }
 
     /**
-     * Display the user's library of favorite books.
+     * Display the user's library of favorite books efficiently.
      */
     public function index(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $perPage = 12;
 
-        // 1. Get the IDs of the user's favorite books from the database.
-        // We sort by 'created_at' to show the most recently added books first by default.
-        $favoriteBookIds = FavoriteBook::where('user_id', $user->id)->pluck('gutenberg_book_id');
+        // 1. **PERFORMANCE FIX:** Paginate the IDs directly from your database first.
+        //    This is extremely fast and avoids fetching all books at once.
+        $favoriteBookIdsPaginator = FavoriteBook::where('user_id', $user->id)
+            ->latest() // Order by most recently added
+            ->paginate($perPage);
 
-        // 2. Fetch the full book details for each ID from the Gutendex API.
+        // 2. Fetch the full book details ONLY for the paginated IDs.
         $books = [];
-        foreach ($favoriteBookIds as $id) {
-            $bookData = $this->gutendexService->getBookById($id);
+        foreach ($favoriteBookIdsPaginator->items() as $favorite) {
+            $bookData = $this->gutendexService->getBookById($favorite->gutenberg_book_id);
             if ($bookData) {
                 $books[] = $bookData;
             }
         }
 
-        // 3. Convert the array of books into a Laravel Collection to easily sort.
-        $bookCollection = new Collection($books);
-
-        // 4. Sort the collection of books by title.
-        $sortedBooks = $bookCollection->sortBy('title')->values();
-
-        // 5. Manually paginate the sorted collection.
-        $perPage = 12;
-        $currentPage = $request->input('page', 1);
-        $currentPageItems = $sortedBooks->slice(($currentPage - 1) * $perPage, $perPage);
+        // 3. Create a new paginator instance with the fetched book details,
+        //    while reusing the pagination data (total, current page, etc.) from the original query.
         $paginatedBooks = new LengthAwarePaginator(
-            $currentPageItems,
-            $sortedBooks->count(),
+            $books,
+            $favoriteBookIdsPaginator->total(),
             $perPage,
-            $currentPage,
+            $favoriteBookIdsPaginator->currentPage(),
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
@@ -62,32 +55,40 @@ class LibraryController extends Controller
     }
 
     /**
-     * Add a book to the user's library.
-     * Note: We use the 'gutenberg_book_id' now.
+     * Add a book to the user's library (handles AJAX requests).
      */
     public function add(Request $request)
     {
-        $request->validate(['gutenberg_book_id' => 'required|integer']);
+        // **AJAX FIX:** Validate the incoming JSON data.
+        $validated = $request->validate(['gutenberg_book_id' => 'required|integer']);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->favoriteBooks()->syncWithoutDetaching([$request->gutenberg_book_id]);
+        $user->favoriteBooks()->syncWithoutDetaching([$validated['gutenberg_book_id']]);
 
-        return back()->with('success', 'The book was added to your library!');
+        // **AJAX FIX:** Return a JSON response for the fetch API.
+        return response()->json([
+            'status' => 'success',
+            'message' => 'The book was added to your library!',
+        ]);
     }
 
     /**
-     * Remove a book from the user's library.
-     * Note: We use the 'gutenberg_book_id' now.
+     * Remove a book from the user's library (handles AJAX requests).
      */
     public function remove(Request $request)
     {
-        $request->validate(['gutenberg_book_id' => 'required|integer']);
+        // **AJAX FIX:** Validate the incoming JSON data.
+        $validated = $request->validate(['gutenberg_book_id' => 'required|integer']);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->favoriteBooks()->detach($request->gutenberg_book_id);
+        $user->favoriteBooks()->detach($validated['gutenberg_book_id']);
 
-        return back()->with('success', 'The book was removed from your library.');
+        // **AJAX FIX:** Return a JSON response for the fetch API.
+        return response()->json([
+            'status' => 'success',
+            'message' => 'The book was removed from your library.',
+        ]);
     }
 }
